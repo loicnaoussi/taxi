@@ -10,7 +10,6 @@ class GpsScreen extends StatefulWidget {
 }
 
 class _GpsScreenState extends State<GpsScreen> {
-  Position? _currentPosition;
   String _currentAddress = 'Localisation en cours...';
   bool _isTracking = true;
 
@@ -36,7 +35,6 @@ class _GpsScreenState extends State<GpsScreen> {
       );
 
       setState(() {
-        _currentPosition = position;
         _currentAddress = _formatPosition(position);
       });
     } catch (e) {

@@ -3,10 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:taxi/themes/theme.dart';
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
-import 'dart:ui';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:taxi/screens/QrCodeScreen.dart';
 
 class DriverHomeScreen extends StatefulWidget {
