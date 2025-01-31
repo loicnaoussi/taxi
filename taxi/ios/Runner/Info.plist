@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Nous avons besoin d'accéder à votre galerie pour enregistrer le QR Code.</string>
 </dict>
 </plist>

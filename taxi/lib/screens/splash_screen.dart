@@ -1,6 +1,6 @@
+
 import 'package:flutter/material.dart';
 import 'package:taxi/routes/routes.dart';
-import 'dart:async';  // Added import for Timer
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,7 +13,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacementNamed(context, Routes.roleSelection);
     });
   }
@@ -21,16 +21,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
+      backgroundColor: Colors.white,
       body: Center(
-        child: Text(
-          'Taxi Application',
-          style: Theme.of(context).textTheme.headlineLarge ??
-              const TextStyle(  // Added fallback style
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+        child: Image.asset(
+          'assets/images/logo.png',
+          width: 150,
+          height: 150,
         ),
       ),
     );

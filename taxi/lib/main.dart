@@ -1,28 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:taxi/screens/splash_screen.dart';
+import 'package:taxi/routes/routes.dart';
+import 'package:taxi/themes/theme.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Taxi Application',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4),
-          brightness: Brightness.light,
+      title: 'Taxi App',
+      theme: AppTheme.lightTheme,
+      initialRoute: Routes.splash,
+      onGenerateRoute: Routes.generateRoute,
+      onUnknownRoute: (settings) => MaterialPageRoute(
+        builder: (_) => Scaffold(
+          body: Center(
+            child: Text('Unknown route: ${settings.name}'),
+          ),
         ),
-        useMaterial3: true,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-      },
     );
   }
 }

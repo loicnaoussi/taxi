@@ -1,36 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:qr_image_generator/qr_image_generator.dart';
+import 'package:taxi/themes/theme.dart';
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:taxi/screens/QrCodeScreen.dart';
 
-class DriverHome extends StatefulWidget {
-  const DriverHome({super.key});
+class DriverHomeScreen extends StatefulWidget {
+  const DriverHomeScreen({super.key});
 
   @override
-  _DriverHomeState createState() => _DriverHomeState();
+  State<DriverHomeScreen> createState() => _DriverHomeScreenState();
 }
 
-class _DriverHomeState extends State<DriverHome> {
-  String qrCode = '';
-  int randomCode = 0;
-  DateTime? lastRegenerationTime;
+class _DriverHomeScreenState extends State<DriverHomeScreen> {
+  int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _generateRandomCode();
-    Timer.periodic(const Duration(hours: 2), (Timer timer) {
-      _generateRandomCode();
-    });
-  }
+  final List<Widget> _pages = [
+    const DriverCodeScreen(),
+    const QrCodeScreen(),
+    const VerificationScreen(),
+  ];
 
-  void _generateRandomCode() {
-    final random = Random();
+  void _onTabTapped(int index) {
     setState(() {
-      randomCode = random.nextInt(9999);
-      lastRegenerationTime = DateTime.now();
+      _currentIndex = index;
     });
   }
 
@@ -38,73 +36,226 @@ class _DriverHomeState extends State<DriverHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Panneau de pilotage du Conducteur'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Ajoutez la logique de déconnexion ici
-            },
-          ),
-        ],
+        title: const Text('Driver Home'),
+        backgroundColor: AppTheme.primaryColor,
       ),
-      body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBody() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Code: $randomCode',
-            style: const TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-            ),
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        backgroundColor: AppTheme.primaryColor,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code),
+            label: 'Code',
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Dernière mis à jour: ${_formatTime(lastRegenerationTime)}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_2),
+            label: 'QR Code',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.verified),
+            label: 'Verification',
           ),
         ],
       ),
     );
   }
+}
 
-  String _formatTime(DateTime? time) {
-    if (time == null) return 'Jamais mis à jour';
-    return time.toString().split(' ').last.split('.')[0];
+class DriverCodeScreen extends StatefulWidget {
+  const DriverCodeScreen({super.key});
+
+  @override
+  State<DriverCodeScreen> createState() => _DriverCodeScreenState();
+}
+
+class _DriverCodeScreenState extends State<DriverCodeScreen> {
+  String _code = '123456';
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
   }
 
-  BottomNavigationBar _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.numbers),
-          label: 'Code',
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(hours: 2), (Timer timer) {
+      setState(() {
+        _code = (100000 + Random().nextInt(900000)).toString();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Driver Code'),
+        backgroundColor: AppTheme.primaryColor,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              _code,
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Implement notification functionality
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.buttonColor,
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Notify Danger'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                // Implement edit personal info functionality
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.buttonColor,
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Edit Info'),
+            ),
+          ],
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.qr_code),
-          label: 'QR Code',
+      ),
+    );
+  }
+}
+
+class VerificationScreen extends StatefulWidget {
+  const VerificationScreen({super.key});
+
+  @override
+  State<VerificationScreen> createState() => _VerificationScreenState();
+}
+
+class _VerificationScreenState extends State<VerificationScreen> {
+  final TextEditingController _photoController = TextEditingController();
+  final TextEditingController _videoController = TextEditingController();
+  final TextEditingController _cniController = TextEditingController();
+  final TextEditingController _cardController = TextEditingController();
+
+  void _submitVerification() {
+    // Implement verification submission functionality
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Verification'),
+        backgroundColor: AppTheme.primaryColor,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              'Upload Photo',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _photoController,
+              decoration: InputDecoration(
+                hintText: 'Upload your photo',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upload Video',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _videoController,
+              decoration: InputDecoration(
+                hintText: 'Upload your video',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upload CNI',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _cniController,
+              decoration: InputDecoration(
+                hintText: 'Upload your CNI',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upload Card Grise',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _cardController,
+              decoration: InputDecoration(
+                hintText: 'Upload your card grise',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _submitVerification,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.buttonColor,
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Submit Verification'),
+            ),
+          ],
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.file_upload),
-          label: 'Vérification',
-        ),
-      ],
-      onTap: (int index) {
-        setState(() {
-          // Met à jour l'onglet sélectionné
-        });
-      },
+      ),
     );
   }
 }
