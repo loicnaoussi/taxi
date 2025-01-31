@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:taxi/themes/theme.dart';
 
 class EditInfoScreen extends StatefulWidget {
@@ -13,9 +15,96 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emergencyContact1Controller = TextEditingController();
   final TextEditingController _emergencyContact2Controller = TextEditingController();
+  File? _selectedImage;
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await ImagePicker().pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Prendre une photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choisir depuis la galerie'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _saveInfo() {
-    // Implement save functionality
+    // Implémentez la logique de sauvegarde ici
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Informations sauvegardées avec succès'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required IconData icon,
+    required String label,
+    required TextEditingController controller,
+    required Color color,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(right: 15),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.grey[100],
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+        ),
+      ),
+    );
   }
 
   @override
@@ -77,9 +166,14 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
               child: Material(
                 color: Colors.grey[200],
                 child: InkWell(
-                  onTap: () {}, // Add photo upload
-                  child: Icon(Icons.camera_alt_rounded,
-                      size: 40, color: Colors.grey[500]),
+                  onTap: _showImageSourceDialog,
+                  child: _selectedImage != null
+                      ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                      : Icon(
+                          Icons.camera_alt_rounded,
+                          size: 40,
+                          color: Colors.grey[500],
+                        ),
                 ),
               ),
             ),
@@ -93,44 +187,14 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
                 color: AppTheme.primaryColor,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.edit_rounded,
-                  size: 20, color: Colors.white),
+              child: const Icon(
+                Icons.edit_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required IconData icon,
-    required String label,
-    required TextEditingController controller,
-    required Color color,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(right: 15),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.grey[100],
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-        ),
       ),
     );
   }

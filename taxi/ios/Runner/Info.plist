@@ -48,6 +48,10 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Nous avons besoin d'accéder à votre galerie pour enregistrer le QR Code.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-<string>Required for location tracking</string>
+	<string>Required for location tracking</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Required to take photos for your profile</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Required to select photos from your gallery</string>
 </dict>
 </plist>
