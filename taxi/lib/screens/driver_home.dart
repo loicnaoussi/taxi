@@ -187,7 +187,7 @@ class DriverCodeScreen extends StatefulWidget {
 }
 
 class _DriverCodeScreenState extends State<DriverCodeScreen> {
-  String _code = '123456';
+  String _code = '748588';
   late Timer _timer;
 
   @override
