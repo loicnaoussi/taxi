@@ -11,14 +11,18 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  qr_image_generator: ^0.2.9
   qr_code_scanner: ^1.0.1
   image_picker: ^1.1.2
   file_picker: ^8.3.1
   flutter_local_notifications: ^18.0.1
   image_gallery_saver: ^2.0.3
   permission_handler: ^11.3.1 
-  qr_flutter: ^4.0.0
+  qr_flutter: ^4.1.0
+  flutter_svg: ^2.0.5
+  mapbox_maps_flutter: ^2.5.1
+  geolocator: ^13.0.2
+  url_launcher: ^6.1.11
+  device_info_plus: ^11.2.2
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +46,5 @@ flutter:
         - asset: assets/fonts/Poppins-Regular.ttf
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
+
+  

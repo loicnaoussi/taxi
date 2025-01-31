@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:qr_image_generator/qr_image_generator.dart';
 import 'package:taxi/themes/theme.dart';
 import 'dart:async';
 import 'dart:math';
@@ -36,30 +35,85 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Driver Home'),
+        title: const Text('Driver Portal'),
         backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
       ),
       body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        backgroundColor: AppTheme.primaryColor,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code),
-            label: 'Code',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_2),
-            label: 'QR Code',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified),
-            label: 'Verification',
-          ),
+      bottomNavigationBar: _buildFancyNavBar(),
+    );
+  }
+
+  Widget _buildFancyNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 10,
+            spreadRadius: 2,
+          )
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          backgroundColor: Colors.white,
+          selectedItemColor: AppTheme.primaryColor,
+          unselectedItemColor: Colors.grey[600],
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          type: BottomNavigationBarType.fixed,
+          items: [
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 0 
+                    ? AppTheme.primaryColor.withOpacity(0.2) 
+                    : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.security_rounded),
+              ),
+              label: 'Code',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 1 
+                    ? AppTheme.primaryColor.withOpacity(0.2) 
+                    : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.qr_code_scanner_rounded),
+              ),
+              label: 'QR',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 2 
+                    ? AppTheme.primaryColor.withOpacity(0.2) 
+                    : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.verified_user_rounded),
+              ),
+              label: 'Verify',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -98,62 +152,143 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Driver Code'),
-        backgroundColor: AppTheme.primaryColor,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppTheme.primaryColor.withOpacity(0.1),
+            Colors.white,
+          ],
+        ),
       ),
-      body: Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              _code,
-              style: const TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-              ),
+            _buildCodeCard(),
+            const SizedBox(height: 40),
+            _buildActionButton(
+              icon: Icons.warning_amber_rounded,
+              text: 'Emergency Alert',
+              onPressed: () => _showEmergencyDialog(),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Implement notification functionality
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.buttonColor,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Notify Danger'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                // Implement edit personal info functionality
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.buttonColor,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Edit Info'),
+            _buildActionButton(
+              icon: Icons.edit_document,
+              text: 'Update Profile',
+              onPressed: () => _navigateToProfileEdit(),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildCodeCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 10,
+            spreadRadius: 3,
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Your Security Code',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _code,
+            style: const TextStyle(
+              fontSize: 42,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 4,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Updates every 2 hours',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({required IconData icon, required String text, required VoidCallback onPressed}) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.7,
+      child: ElevatedButton.icon(
+        icon: Icon(icon, size: 24),
+        label: Text(text),
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: AppTheme.primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.3)),
+          ),
+          elevation: 3,
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEmergencyDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Emergency Alert'),
+        content: const Text('Are you sure you want to send an emergency alert to authorities?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Implement emergency alert
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Emergency alert sent!')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToProfileEdit() {
+    // Implement navigation
   }
 }
 
@@ -165,96 +300,148 @@ class VerificationScreen extends StatefulWidget {
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  final TextEditingController _photoController = TextEditingController();
-  final TextEditingController _videoController = TextEditingController();
-  final TextEditingController _cniController = TextEditingController();
-  final TextEditingController _cardController = TextEditingController();
+  final Map<String, String?> _files = {
+    'photo': null,
+    'video': null,
+    'cni': null,
+    'card': null,
+  };
+
+  Future<void> _pickFile(String fileType) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      setState(() {
+        _files[fileType] = result.files.single.name;
+      });
+    }
+  }
 
   void _submitVerification() {
-    // Implement verification submission functionality
+    if (_files.values.any((v) => v == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload all required files')),
+      );
+      return;
+    }
+    // Submit implementation
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verification'),
-        backgroundColor: AppTheme.primaryColor,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Document Verification',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ..._buildUploadSections(),
+          const SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: _submitVerification,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+            child: const Text(
+              'Submit Verification',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Text(
-              'Upload Photo',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _photoController,
-              decoration: InputDecoration(
-                hintText: 'Upload your photo',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Upload Video',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _videoController,
-              decoration: InputDecoration(
-                hintText: 'Upload your video',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Upload CNI',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _cniController,
-              decoration: InputDecoration(
-                hintText: 'Upload your CNI',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Upload Card Grise',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _cardController,
-              decoration: InputDecoration(
-                hintText: 'Upload your card grise',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _submitVerification,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.buttonColor,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  List<Widget> _buildUploadSections() {
+    return [
+      _buildUploadCard(
+        title: 'Profile Photo',
+        icon: Icons.camera_alt_rounded,
+        fileType: 'photo',
+      ),
+      _buildUploadCard(
+        title: 'Introduction Video',
+        icon: Icons.videocam_rounded,
+        fileType: 'video',
+      ),
+      _buildUploadCard(
+        title: 'National ID',
+        icon: Icons.credit_card_rounded,
+        fileType: 'cni',
+      ),
+      _buildUploadCard(
+        title: 'Vehicle Registration',
+        icon: Icons.directions_car_rounded,
+        fileType: 'card',
+      ),
+    ];
+  }
+
+  Widget _buildUploadCard({required String title, required IconData icon, required String fileType}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 3,
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppTheme.primaryColor),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Text('Submit Verification'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_files[fileType] != null)
+            Text(
+              _files[fileType]!,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
             ),
-          ],
-        ),
+          const SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () => _pickFile(fileType),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+              foregroundColor: AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(_files[fileType] == null ? 'Upload File' : 'Change File'),
+          ),
+        ],
       ),
     );
   }

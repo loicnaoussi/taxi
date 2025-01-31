@@ -1,5 +1,3 @@
-// lib/screens/emergency_contacts_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:taxi/themes/theme.dart';
 
@@ -11,81 +9,148 @@ class EmergencyContactsScreen extends StatefulWidget {
 }
 
 class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
-  final TextEditingController _contact1Controller = TextEditingController();
-  final TextEditingController _contact2Controller = TextEditingController();
-  final TextEditingController _contact3Controller = TextEditingController();
+  final List<TextEditingController> _controllers = List.generate(3, (i) => TextEditingController());
+  final List<Color> _contactColors = [Colors.red, Colors.orange, Colors.purple];
 
   void _saveContacts() {
-    // Implement save contacts functionality
+    if (_controllers.any((c) => c.text.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez remplir tous les champs requis')),
+      );
+      return;
+    }
+    // Implémenter la sauvegarde
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Emergency Contacts'),
+        title: const Text('Contacts d\'Urgence'),
         backgroundColor: AppTheme.primaryColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Text(
-              'Emergency Contact 1',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _contact1Controller,
-              decoration: InputDecoration(
-                hintText: 'Enter emergency contact 1',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Emergency Contact 2',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _contact2Controller,
-              decoration: InputDecoration(
-                hintText: 'Enter emergency contact 2',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Emergency Contact 3',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _contact3Controller,
-              decoration: InputDecoration(
-                hintText: 'Enter emergency contact 3',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _saveContacts,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.buttonColor,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Save Contacts'),
-            ),
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 30),
+            ...List.generate(3, (index) => _buildContactCard(index)),
+            const SizedBox(height: 40),
+            _buildSaveButton(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sécurité Personnelle',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Ajoutez au moins 3 contacts de confiance à prévenir en cas d\'urgence',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactCard(int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _contactColors[index].withOpacity(0.1),
+                _contactColors[index].withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _contactColors[index].withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.emergency_rounded,
+                  color: _contactColors[index],
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: TextFormField(
+                  controller: _controllers[index],
+                  decoration: InputDecoration(
+                    labelText: 'Contact ${index + 1}',
+                    hintText: 'Entrez le numéro de téléphone',
+                    border: InputBorder.none,
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.contacts_rounded, 
+                          color: _contactColors[index]),
+                      onPressed: () {}, // Implémenter le sélecteur de contact
+                    ),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.shield_rounded),
+        label: const Text('ENREGISTRER LES CONTACTS'),
+        onPressed: _saveContacts,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 3,
+          shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );

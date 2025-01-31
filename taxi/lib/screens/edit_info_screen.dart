@@ -1,5 +1,3 @@
-// lib/screens/edit_info_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:taxi/themes/theme.dart';
 
@@ -24,82 +22,193 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Info'),
+        title: const Text('Edit Profile'),
         backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            _buildUserAvatar(),
+            const SizedBox(height: 30),
+            _buildInputField(
+              icon: Icons.person_rounded,
+              label: 'Full Name',
+              controller: _nameController,
+              color: Colors.blue,
+            ),
+            _buildInputField(
+              icon: Icons.phone_rounded,
+              label: 'Phone Number',
+              controller: _phoneController,
+              color: Colors.green,
+            ),
+            const SizedBox(height: 20),
+            _buildEmergencySection(),
+            const SizedBox(height: 30),
+            _buildSaveButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar() {
+    return Center(
+      child: Stack(
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.2),
+                width: 3,
+              ),
+            ),
+            child: ClipOval(
+              child: Material(
+                color: Colors.grey[200],
+                child: InkWell(
+                  onTap: () {}, // Add photo upload
+                  child: Icon(Icons.camera_alt_rounded,
+                      size: 40, color: Colors.grey[500]),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.edit_rounded,
+                  size: 20, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required IconData icon,
+    required String label,
+    required TextEditingController controller,
+    required Color color,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(right: 15),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.grey[100],
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmergencySection() {
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.red.shade50,
+              Colors.red.shade50.withOpacity(0.5),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Text(
-              'Name',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          children: [
+            Row(
+              children: [
+                Icon(Icons.emergency_rounded, color: Colors.red[800]),
+                const SizedBox(width: 10),
+                Text(
+                  'Emergency Contacts',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[800],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                hintText: 'Enter your name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Phone Number',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _phoneController,
-              decoration: InputDecoration(
-                hintText: 'Enter your phone number',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Emergency Contact 1',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
+            const SizedBox(height: 20),
+            _buildInputField(
+              icon: Icons.contact_emergency_rounded,
+              label: 'Contact 1',
               controller: _emergencyContact1Controller,
-              decoration: InputDecoration(
-                hintText: 'Enter emergency contact 1',
-                border: OutlineInputBorder(),
-              ),
+              color: Colors.orange,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Emergency Contact 2',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
+            _buildInputField(
+              icon: Icons.contact_emergency_rounded,
+              label: 'Contact 2',
               controller: _emergencyContact2Controller,
-              decoration: InputDecoration(
-                hintText: 'Enter emergency contact 2',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _saveInfo,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.buttonColor,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Save Info'),
+              color: Colors.orange,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.check_circle_rounded),
+        label: const Text('SAVE CHANGES'),
+        onPressed: _saveInfo,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 3,
+          shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );
