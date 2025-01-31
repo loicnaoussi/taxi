@@ -33,7 +33,6 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // En-tête personnalisé avec logo
           Container(
             height: 100,
             decoration: BoxDecoration(

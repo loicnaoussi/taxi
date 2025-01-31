@@ -28,7 +28,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
   Future<void> _downloadQrCode() async {
   try {
     final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() 
-        as RenderRepaintBoundary?; // <-- Correction ici
+        as RenderRepaintBoundary?; 
     if (boundary == null) return;
 
       final image = await boundary.toImage(pixelRatio: 3.0);

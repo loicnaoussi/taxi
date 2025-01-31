@@ -1,12 +1,9 @@
-// lib/routes/routes.dart
 
 import 'package:flutter/material.dart';
 import 'package:taxi/screens/driver_home.dart';
 import 'package:taxi/screens/passenger_home.dart';
 import 'package:taxi/screens/role_selection_screen.dart';
 import 'package:taxi/screens/splash_screen.dart';
-import 'package:taxi/screens/request_ride_screen.dart';
-import 'package:taxi/screens/ride_history_screen.dart';
 
 class Routes {
   static const String splash = '/';
@@ -26,10 +23,6 @@ class Routes {
         return MaterialPageRoute(builder: (_) => DriverHomeScreen());
       case passengerHome:
         return MaterialPageRoute(builder: (_) => PassengerHomeScreen());
-      case requestRide:
-        return MaterialPageRoute(builder: (_) => RequestRideScreen());
-      case rideHistory:
-        return MaterialPageRoute(builder: (_) => RideHistoryScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
