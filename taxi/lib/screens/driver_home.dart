@@ -4,6 +4,7 @@ import 'package:taxi/themes/theme.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:taxi/screens/QrCodeScreen.dart';
+import 'package:taxi/screens/EditInfoScreen.dart'; 
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -67,7 +68,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       title: Row(
         children: [
           Image.asset(
-            'assets/images/logo.png', 
+            'assets/images/logo.png',
             height: 40,
             width: 40,
             fit: BoxFit.contain,
@@ -100,7 +101,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       centerTitle: false,
       actions: [
         IconButton(
-          icon: Icon(Icons.notifications_active, color: Colors.white.withOpacity(0.9)),
+          icon: Icon(Icons.notifications_active,
+              color: Colors.white.withOpacity(0.9)),
           onPressed: () {},
         ),
       ],
@@ -135,9 +137,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 0 
-                    ? AppTheme.primaryColor.withOpacity(0.2) 
-                    : Colors.transparent,
+                  color: _currentIndex == 0
+                      ? AppTheme.primaryColor.withOpacity(0.2)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.security_rounded),
@@ -148,9 +150,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 1 
-                    ? AppTheme.primaryColor.withOpacity(0.2) 
-                    : Colors.transparent,
+                  color: _currentIndex == 1
+                      ? AppTheme.primaryColor.withOpacity(0.2)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.qr_code_scanner_rounded),
@@ -161,9 +163,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 2 
-                    ? AppTheme.primaryColor.withOpacity(0.2) 
-                    : Colors.transparent,
+                  color: _currentIndex == 2
+                      ? AppTheme.primaryColor.withOpacity(0.2)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.verified_user_rounded),
@@ -208,7 +210,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     });
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -236,7 +238,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
             _buildActionButton(
               icon: Icons.edit_document,
               text: 'Update Profile',
-              onPressed: () => _navigateToProfileEdit(),
+              onPressed: _navigateToProfileEdit, // Modification ici
             ),
           ],
         ),
@@ -291,7 +293,10 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required String text, required VoidCallback onPressed}) {
+  Widget _buildActionButton(
+      {required IconData icon,
+      required String text,
+      required VoidCallback onPressed}) {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.7,
       child: ElevatedButton.icon(
@@ -321,7 +326,8 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Emergency Alert'),
-        content: const Text('Are you sure you want to send an emergency alert to authorities?'),
+        content: const Text(
+            'Are you sure you want to send an emergency alert to authorities?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -345,8 +351,13 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     );
   }
 
-  void _navigateToProfileEdit() {
-    // Implement navigation
+   void _navigateToProfileEdit() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EditInfoScreen(),
+      ),
+    );
   }
 }
 
@@ -446,7 +457,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
     ];
   }
 
-  Widget _buildUploadCard({required String title, required IconData icon, required String fileType}) {
+  Widget _buildUploadCard(
+      {required String title,
+      required IconData icon,
+      required String fileType}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -497,7 +511,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(_files[fileType] == null ? 'Upload File' : 'Change File'),
+            child:
+                Text(_files[fileType] == null ? 'Upload File' : 'Change File'),
           ),
         ],
       ),
