@@ -1,10 +1,9 @@
 # taxi
 frontend d'une application de taxi avec flutter
-# 🚕 SafeRide - Application de Transport Sécurisée
+# 🚕Application de Transport Sécurisée
 
 **Une solution complète de réservation de taxi avec système de vérification renforcée**
 
-![Bannière](https://via.placeholder.com/1200x400/0D47A1/FFFFFF?text=SafeRide+-+Sécurité+et+Fiabilité)
 
 ## ✨ Fonctionnalités Clés
 
@@ -19,20 +18,20 @@ frontend d'une application de taxi avec flutter
 
 <div align="center" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 20px;">
 
-<!-- Début des captures dans l'ordre fourni -->
-![1](images/Screenshot%202025-02-01%20004701.png)
-![2](images/Screenshot%202025-02-01%20004738.png)
-![3](images/Screenshot%202025-02-01%20004809.png)
-![4](images/Screenshot%202025-02-01%20004824.png)
-![5](images/Screenshot%202025-02-01%20004836.png)
-![6](images/Screenshot%202025-02-01%20004854.png)
-![7](images/Screenshot%202025-02-01%20004909.png)
-![8](images/Screenshot%202025-02-01%20004931.png)
-![9](images/Screenshot%202025-02-01%20004955.png)
-![10](images/Screenshot%202025-02-01%20005013.png)
-![11](images/Screenshot%202025-02-01%20005026.png)
-![12](images/Screenshot%202025-02-01%20005037.png)
-<!-- Fin des captures -->
+
+![1](images/1.png)
+![2](images/2.png)
+![3](images/3.png)
+![4](images/4.png)
+![5](images/5.png)
+![6](images/6.png)
+![7](images/7.png)
+![8](images/8.png)
+![9](images/9.png)
+![10](images/10.png)
+![11](images/11.png)
+![12](images/12.png)
+
 
 </div>
 
