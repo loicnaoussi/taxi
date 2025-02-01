@@ -19,7 +19,7 @@ Application de Transport Sécurisée
 
 **Une solution complète de réservation de taxi avec système de vérification renforcée**
 
-![Bannière](https://via.placeholder.com/1200x400/0D47A1/FFFFFF?text=SafeRide+-+Sécurité+et+Fiabilité)
+
 
 ## ✨ Fonctionnalités Clés
 
