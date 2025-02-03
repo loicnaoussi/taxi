@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:taxi/themes/theme.dart';
 import 'dart:async';
-import 'dart:math';
 import 'package:taxi/screens/QrCodeScreen.dart';
 import 'package:taxi/screens/EditInfoScreen.dart'; 
 
@@ -188,7 +187,10 @@ class DriverCodeScreen extends StatefulWidget {
 
 class _DriverCodeScreenState extends State<DriverCodeScreen> {
   String _code = '748588';
-  late Timer _timer;
+  bool _isCodeVisible = false;
+  final _passwordController = TextEditingController();
+  final _storedPassword = "1234"; 
+
 
   @override
   void initState() {
@@ -198,18 +200,26 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(hours: 2), (Timer timer) {
-      setState(() {
-        _code = (100000 + Random().nextInt(900000)).toString();
-      });
-    });
-  }
 
+  void _startTimer() {
+  }
+  void _toggleCodeVisibility() async {
+    final result = await showDialog(
+      context: context,
+      builder: (context) => _buildPasswordDialog(),
+    );
+
+    if (result == true) {
+      setState(() => _isCodeVisible = true);
+      await Future.delayed(Duration(seconds: 30), () {
+        if (mounted) setState(() => _isCodeVisible = false);
+      });
+    }
+  }
 @override
   Widget build(BuildContext context) {
     return Container(
@@ -245,50 +255,115 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
       ),
     );
   }
-
-  Widget _buildCodeCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 10,
-            spreadRadius: 3,
-          )
+Widget _buildPasswordDialog() {
+    return AlertDialog(
+      title: Text('Authentification Requise',
+          style: TextStyle(color: AppTheme.primaryColor)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: 'Mot de passe',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              suffixIcon: Icon(Icons.lock),
+            ),
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_passwordController.text == _storedPassword) {
+                    Navigator.pop(context, true);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Mot de passe incorrect')),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text('Confirmer'),
+              ),
+            ],
+          ),
         ],
       ),
-      child: Column(
-        children: [
-          const Text(
-            'Your Security Code',
-            style: TextStyle(
-              fontSize: 18,
+    );
+  }
+  Widget _buildCodeCard() {
+    return GestureDetector(
+      onTap: _toggleCodeVisibility,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 10,
+              spreadRadius: 3,
+            )
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              'Code Sécurité',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 15),
+            _isCodeVisible
+                ? Text(
+                    _code,
+                    style: TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
+                      color: AppTheme.primaryColor,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      6,
+                      (index) => Container(
+                        margin: EdgeInsets.symmetric(horizontal: 8),
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+            SizedBox(height: 10),
+            Icon(
+              _isCodeVisible ? Icons.visibility_off : Icons.visibility,
               color: Colors.grey,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _code,
-            style: const TextStyle(
-              fontSize: 42,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 4,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Updates every 2 hours',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
