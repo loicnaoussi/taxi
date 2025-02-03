@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:taxi/themes/theme.dart';
+import 'package:share_plus/share_plus.dart';
 
 class GpsScreen extends StatefulWidget {
   const GpsScreen({super.key});
@@ -44,6 +45,51 @@ class _GpsScreenState extends State<GpsScreen> {
 
   String _formatPosition(Position position) {
     return '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+  }
+
+ void _shareTripDetails() async {
+    final bool confirmShare = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmer le partage'),
+        content: const Text(
+          'Voulez-vous vraiment partager les informations du trajet ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+            ),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmShare == true) {
+      final String driverName = "Jean Dupont";
+      final String passengerName = "Marie Curie";
+      final String departureLocation = "Paris, France";
+      final String destination = "Lyon, France";
+
+      final String shareMessage = """
+            🚖 Informations du trajet :
+
+            Conducteur : $driverName
+            Passager : $passengerName
+            Départ : $departureLocation
+            Destination : $destination
+
+            Partagez ce trajet avec un autre utilisateur !
+            """;
+
+      Share.share(shareMessage);
+    }
   }
 
   @override
@@ -195,6 +241,12 @@ class _GpsScreenState extends State<GpsScreen> {
             icon: Icons.qr_code_scanner,
             color: Colors.blue,
             onPressed: _scanQrCode,
+          ),
+          const SizedBox(height: 10),
+          _buildMapButton(
+            icon: Icons.share,
+            color: Colors.green,
+            onPressed: _shareTripDetails,
           ),
           const SizedBox(height: 10),
           _buildMapButton(

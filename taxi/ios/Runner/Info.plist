@@ -53,5 +53,9 @@
 	<string>Required to take photos for your profile</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Required to select photos from your gallery</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Partager des fichiers</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Partager des photos</string>
 </dict>
 </plist>

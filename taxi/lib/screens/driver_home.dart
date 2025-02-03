@@ -3,7 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:taxi/themes/theme.dart';
 import 'dart:async';
 import 'package:taxi/screens/QrCodeScreen.dart';
-import 'package:taxi/screens/EditInfoScreen.dart'; 
+import 'package:taxi/screens/EditInfoScreen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -189,8 +190,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
   String _code = '748588';
   bool _isCodeVisible = false;
   final _passwordController = TextEditingController();
-  final _storedPassword = "1234"; 
-
+  final _storedPassword = "1234";
 
   @override
   void initState() {
@@ -204,9 +204,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     super.dispose();
   }
 
-
-  void _startTimer() {
-  }
+  void _startTimer() {}
   void _toggleCodeVisibility() async {
     final result = await showDialog(
       context: context,
@@ -220,7 +218,54 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
       });
     }
   }
-@override
+
+ void _shareTripDetails() async {
+  
+    final bool confirmShare = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmer le partage'),
+        content: const Text(
+          'Voulez-vous vraiment partager les informations du trajet ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+            ),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmShare == true) {
+      final String driverName = "Jean Dupont";
+      final String passengerName = "Marie Curie";
+      final String departureLocation = "Paris, France";
+      final String destination = "Lyon, France";
+
+      final String shareMessage = """
+            🚖 Informations du trajet :
+
+            Conducteur : $driverName
+            Passager : $passengerName
+            Départ : $departureLocation
+            Destination : $destination
+
+            Partagez ce trajet avec un autre utilisateur !
+            """;
+
+      Share.share(shareMessage);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -248,14 +293,22 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
             _buildActionButton(
               icon: Icons.edit_document,
               text: 'Update Profile',
-              onPressed: _navigateToProfileEdit, // Modification ici
+              onPressed: _navigateToProfileEdit,
+            ),
+            const SizedBox(height: 20),
+            // Nouveau bouton de partage
+            _buildActionButton(
+              icon: Icons.share,
+              text: 'Share Trip',
+              onPressed: _shareTripDetails,
             ),
           ],
         ),
       ),
     );
   }
-Widget _buildPasswordDialog() {
+
+  Widget _buildPasswordDialog() {
     return AlertDialog(
       title: Text('Authentification Requise',
           style: TextStyle(color: AppTheme.primaryColor)),
@@ -305,6 +358,7 @@ Widget _buildPasswordDialog() {
       ),
     );
   }
+
   Widget _buildCodeCard() {
     return GestureDetector(
       onTap: _toggleCodeVisibility,
@@ -426,7 +480,7 @@ Widget _buildPasswordDialog() {
     );
   }
 
-   void _navigateToProfileEdit() {
+  void _navigateToProfileEdit() {
     Navigator.push(
       context,
       MaterialPageRoute(
