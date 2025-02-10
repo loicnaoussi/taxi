@@ -61,3 +61,6 @@ git clone https://github.com/votre-utilisateur/saferide.git
 cd saferide
 flutter pub get
 flutter run
+
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo2LCJ1c2VyX3R5cGUiOiJwYXNzZW5nZXIiLCJpYXQiOjE3Mzg4ODY2NDksImV4cCI6MTczODg5MDI0OX0.z3yDX1prw0QH_xKQfaWEgZYzgZbQBo4oVNeuhhZRUZ8
