@@ -3,62 +3,32 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 🔹 1. Obtenir les statistiques générales (Admin uniquement)
-router.get("/stats", authMiddleware, async (req, res) => {
+// 📌 Signaler un problème sur un trajet
+router.post("/report", authMiddleware, async (req, res) => {
     try {
-        if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent voir les statistiques." });
+        const { ride_id, issue_type, description } = req.body;
+
+        if (!ride_id || !issue_type || !description) {
+            return res.status(400).json({ message: "Tous les champs sont requis." });
         }
 
-        const [totalUsers] = await db.query("SELECT COUNT(*) AS total_users FROM users");
-        const [totalRides] = await db.query("SELECT COUNT(*) AS total_rides FROM rides");
-        const [totalRevenue] = await db.query("SELECT SUM(amount) AS total_revenue FROM payments WHERE payment_status = 'completed'");
+        await db.query(
+            "INSERT INTO issue_reports (user_id, ride_id, issue_type, description, status) VALUES (?, ?, ?, ?, 'pending')",
+            [req.user.user_id, ride_id, issue_type, description]
+        );
 
-        res.json({
-            total_users: totalUsers[0].total_users,
-            total_rides: totalRides[0].total_rides,
-            total_revenue: totalRevenue[0].total_revenue || 0
-        });
+        res.status(201).json({ message: "Réclamation envoyée avec succès !" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// 🔹 2. Obtenir les revenus des paiements (Admin uniquement)
-router.get("/revenues", authMiddleware, async (req, res) => {
+// 📌 Voir les réclamations envoyées par un utilisateur
+router.get("/my-reports", authMiddleware, async (req, res) => {
     try {
-        if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent voir les revenus." });
-        }
+        const [reports] = await db.query("SELECT * FROM issue_reports WHERE user_id = ?", [req.user.user_id]);
 
-        const [revenues] = await db.query(`
-            SELECT DATE(created_at) AS date, SUM(amount) AS revenue
-            FROM payments
-            WHERE payment_status = 'completed'
-            GROUP BY DATE(created_at)
-            ORDER BY date DESC
-        `);
-
-        res.json(revenues);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 🔹 3. Obtenir le nombre d'utilisateurs actifs par rôle (Admin uniquement)
-router.get("/active-users", authMiddleware, async (req, res) => {
-    try {
-        if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent voir ces données." });
-        }
-
-        const [activeUsers] = await db.query(`
-            SELECT user_type, COUNT(*) AS count
-            FROM users
-            GROUP BY user_type
-        `);
-
-        res.json(activeUsers);
+        res.json(reports);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

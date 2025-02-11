@@ -3,7 +3,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 🔹 1. Signaler un problème sur un trajet
+// 📌 1. Signaler un problème sur un trajet
 router.post("/report", authMiddleware, async (req, res) => {
     try {
         const { ride_id, issue_type, description } = req.body;
@@ -12,8 +12,14 @@ router.post("/report", authMiddleware, async (req, res) => {
             return res.status(400).json({ message: "Tous les champs sont requis." });
         }
 
+        // Vérifier que le trajet existe
+        const [ride] = await db.query("SELECT ride_id FROM rides WHERE ride_id = ?", [ride_id]);
+        if (ride.length === 0) {
+            return res.status(404).json({ message: "Trajet introuvable." });
+        }
+
         await db.query(
-            "INSERT INTO issue_reports (user_id, ride_id, issue_type, description, status) VALUES (?, ?, ?, ?, 'pending')",
+            "INSERT INTO issue_reports (user_id, ride_id, issue_type, description, status, created_at) VALUES (?, ?, ?, ?, 'pending', NOW())",
             [req.user.user_id, ride_id, issue_type, description]
         );
 
@@ -23,37 +29,61 @@ router.post("/report", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 2. Voir les réclamations envoyées par un utilisateur
+// 📌 2. Voir les réclamations envoyées par un utilisateur (Sécurisé)
 router.get("/my-reports", authMiddleware, async (req, res) => {
     try {
-        const [reports] = await db.query("SELECT * FROM issue_reports WHERE user_id = ?", [req.user.user_id]);
+        const [reports] = await db.query(
+            "SELECT report_id, ride_id, issue_type, description, status, created_at FROM issue_reports WHERE user_id = ? ORDER BY created_at DESC",
+            [req.user.user_id]
+        );
 
-        res.json(reports);
+        res.json({ total: reports.length, reports });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// 🔹 3. Voir toutes les réclamations (Admin uniquement)
+// 📌 3. Voir toutes les réclamations (Admin uniquement)
 router.get("/admin/reports", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
             return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent voir les signalements." });
         }
 
-        const [reports] = await db.query("SELECT * FROM issue_reports ORDER BY created_at DESC");
+        const [reports] = await db.query(
+            "SELECT report_id, user_id, ride_id, issue_type, description, status, created_at FROM issue_reports ORDER BY created_at DESC"
+        );
 
-        res.json(reports);
+        res.json({ total: reports.length, reports });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// 🔹 4. Mettre à jour le statut d'un signalement (Admin uniquement)
+// 📌 4. Voir les réclamations d'un utilisateur spécifique (Admin uniquement)
+router.get("/admin/reports/user/:user_id", authMiddleware, async (req, res) => {
+    try {
+        if (req.user.user_type !== "admin") {
+            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent voir ces signalements." });
+        }
+
+        const { user_id } = req.params;
+        const [reports] = await db.query(
+            "SELECT report_id, ride_id, issue_type, description, status, created_at FROM issue_reports WHERE user_id = ? ORDER BY created_at DESC",
+            [user_id]
+        );
+
+        res.json({ total: reports.length, reports });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 📌 5. Mettre à jour le statut d'un signalement (Admin uniquement)
 router.put("/admin/update/:report_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent mettre à jour les signalements." });
+            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent modifier les signalements." });
         }
 
         const { status } = req.body;
@@ -62,6 +92,12 @@ router.put("/admin/update/:report_id", authMiddleware, async (req, res) => {
         const allowedStatuses = ["pending", "reviewed", "resolved"];
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({ message: "Statut invalide." });
+        }
+
+        // Vérifier que la réclamation existe
+        const [report] = await db.query("SELECT report_id FROM issue_reports WHERE report_id = ?", [report_id]);
+        if (report.length === 0) {
+            return res.status(404).json({ message: "Réclamation introuvable." });
         }
 
         await db.query("UPDATE issue_reports SET status = ? WHERE report_id = ?", [status, report_id]);

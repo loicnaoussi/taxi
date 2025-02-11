@@ -20,18 +20,7 @@ const storage = multer.diskStorage({
     }
 });
 
-// 📌 Filtrage des fichiers acceptés (vidéos et images)
-const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "video/mp4"];
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error("Format de fichier non pris en charge"), false);
-    }
-};
-
-// 📌 Middleware d'upload
-const upload = multer({ storage, fileFilter });
+const upload = multer({ storage });
 
 // 📌 Vérification d’identité (vidéo et CNI)
 router.post(
@@ -54,7 +43,6 @@ router.post(
             const cniFront = req.files["cni_front"][0].filename;
             const cniBack = req.files["cni_back"][0].filename;
 
-            // 📌 Enregistrement dans la base de données
             await db.query(
                 "INSERT INTO user_verifications (user_id, verification_video, cni_front, cni_back, status) VALUES (?, ?, ?, ?, 'pending')",
                 [userId, verificationVideo, cniFront, cniBack]
@@ -66,42 +54,5 @@ router.post(
         }
     }
 );
-
-// 📌 Vérification par un administrateur (Validation ou Rejet)
-router.post("/validate/:verification_id", authMiddleware, async (req, res) => {
-    try {
-        const { verification_id } = req.params;
-        const { status } = req.body;
-
-        if (!["approved", "rejected"].includes(status)) {
-            return res.status(400).json({ message: "Statut invalide." });
-        }
-
-        await db.query("UPDATE user_verifications SET status = ? WHERE verification_id = ?", [status, verification_id]);
-
-        res.json({ message: `Vérification ${status === "approved" ? "approuvée" : "rejetée"} avec succès.` });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 📌 Obtenir l'état de la vérification
-router.get("/status", authMiddleware, async (req, res) => {
-    try {
-        const userId = req.user.user_id;
-        const [verifications] = await db.query(
-            "SELECT status FROM user_verifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
-            [userId]
-        );
-
-        if (verifications.length === 0) {
-            return res.status(404).json({ message: "Aucune vérification trouvée." });
-        }
-
-        res.json({ status: verifications[0].status });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 module.exports = router;

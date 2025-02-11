@@ -3,7 +3,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 🔹 1. Récupérer les paramètres de l'application
+// 📌 Récupérer les paramètres de l'application
 router.get("/", async (req, res) => {
     try {
         const [settings] = await db.query("SELECT * FROM settings LIMIT 1");
@@ -18,12 +18,11 @@ router.get("/", async (req, res) => {
     }
 });
 
-// 🔹 2. Modifier les paramètres (Admin uniquement)
+// 📌 Modifier les paramètres (Admin uniquement)
 router.put("/update", authMiddleware, async (req, res) => {
     try {
-        // Vérifier si l'utilisateur est un admin (ajoute ce champ dans ta BDD si nécessaire)
         if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent modifier les paramètres." });
+            return res.status(403).json({ message: "Seuls les administrateurs peuvent modifier les paramètres." });
         }
 
         const { base_fare, cost_per_km, max_distance_km } = req.body;

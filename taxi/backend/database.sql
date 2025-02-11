@@ -1,37 +1,41 @@
--- Création de la base de données
+-- 📌 Création de la base de données principale
 CREATE DATABASE IF NOT EXISTS taxi_app;
 USE taxi_app;
 
--- Table des utilisateurs (passagers & chauffeurs)
+-- 📌 Table des utilisateurs (passagers & chauffeurs & admins)
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) UNIQUE,
+    email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100),
-    phone_number VARCHAR(20) UNIQUE,
+    full_name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(20) UNIQUE NOT NULL,
     profile_image_url VARCHAR(255),
-    user_type ENUM('driver', 'passenger', 'driver') NOT NULL,
+    user_type ENUM('driver', 'passenger', 'admin') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table des véhicules (chauffeurs uniquement)
+-- 📌 Table des véhicules (chauffeurs uniquement)
 CREATE TABLE IF NOT EXISTS vehicles (
     vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
     driver_id INT NOT NULL,
-    make VARCHAR(50),
-    model VARCHAR(50),
+    marque VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
     year INT CHECK (year >= 2000),
-    license_plate VARCHAR(20) UNIQUE,
-    color VARCHAR(20),
+    license_plate VARCHAR(20) UNIQUE NOT NULL,
+    couleur VARCHAR(20) NOT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    carte_grise VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Table des trajets
+-- 📌 Table des trajets
 CREATE TABLE IF NOT EXISTS rides (
     ride_id INT AUTO_INCREMENT PRIMARY KEY,
     passenger_id INT NOT NULL,
     driver_id INT,
+    vehicle_id INT,
     pickup_location VARCHAR(255) NOT NULL,
     dropoff_location VARCHAR(255) NOT NULL,
     pickup_time DATETIME,
@@ -40,22 +44,56 @@ CREATE TABLE IF NOT EXISTS rides (
     fare DECIMAL(10,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (passenger_id) REFERENCES users(user_id),
-    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE SET NULL
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE SET NULL
 );
 
--- Table des paiements
+-- 📌 Table des paiements
 CREATE TABLE IF NOT EXISTS payments (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     ride_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    payment_method ENUM('cash', 'credit_card', 'mobile_payment'),
+    payment_method ENUM('cash', 'credit_card', 'mobile_payment') NOT NULL,
     payment_status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
     transaction_id VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
 );
 
--- Table des QR Codes (vérification des utilisateurs)
+-- 📌 Table des contacts d’urgence
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+    contact_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    contact_name VARCHAR(100) NOT NULL,
+    contact_phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 📌 Table des évaluations et avis
+CREATE TABLE IF NOT EXISTS reviews (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    ride_id INT NOT NULL,
+    reviewer_id INT NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewer_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 📌 Table des notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 📌 Table des QR Codes (identification des utilisateurs)
 CREATE TABLE IF NOT EXISTS qr_codes (
     qr_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -64,80 +102,27 @@ CREATE TABLE IF NOT EXISTS qr_codes (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Table des codes de sécurité chauffeurs
-CREATE TABLE IF NOT EXISTS driver_codes (
-    code_id INT AUTO_INCREMENT PRIMARY KEY,
-    driver_id INT NOT NULL,
-    security_code VARCHAR(6) NOT NULL UNIQUE,
-    expires_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- Table des contacts d’urgence
-CREATE TABLE IF NOT EXISTS emergency_contacts (
-    contact_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    contact_name VARCHAR(100),
-    contact_phone VARCHAR(20),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- Table des évaluations et avis
-CREATE TABLE IF NOT EXISTS reviews (
-    review_id INT AUTO_INCREMENT PRIMARY KEY,
-    ride_id INT NOT NULL,
-    reviewer_id INT NOT NULL,
-    rating INT CHECK (rating BETWEEN 1 AND 5),
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ride_id) REFERENCES rides(ride_id),
-    FOREIGN KEY (reviewer_id) REFERENCES users(user_id)
-);
-
--- Table des notifications
-CREATE TABLE IF NOT EXISTS notifications (
-    notification_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(100),
-    message TEXT,
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- Table des vérifications d'identité (CNI, vidéo, photo, carte grise)
-CREATE TABLE IF NOT EXISTS user_verifications (
-    verification_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    photo_url VARCHAR(255),
-    video_url VARCHAR(255),
-    cni_url VARCHAR(255),
-    vehicle_registration_url VARCHAR(255), -- Carte grise (pour chauffeurs)
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- Table des localisations GPS
+-- 📌 Table des localisations GPS
 CREATE TABLE IF NOT EXISTS user_location (
     location_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    latitude DECIMAL(10, 8) NOT NULL,
-    longitude DECIMAL(11, 8) NOT NULL,
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- 📌 Table des paramètres de l’application
 CREATE TABLE IF NOT EXISTS settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    base_fare DECIMAL(10,2) NOT NULL DEFAULT 5.00,  -- Tarif de base
-    cost_per_km DECIMAL(10,2) NOT NULL DEFAULT 1.50, -- Coût par kilomètre
-    max_distance_km INT NOT NULL DEFAULT 100,        -- Distance maximale en km
+    base_fare DECIMAL(10,2) NOT NULL DEFAULT 5.00,
+    cost_per_km DECIMAL(10,2) NOT NULL DEFAULT 1.50,
+    max_distance_km INT NOT NULL DEFAULT 100,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- 📌 Table des signalements et réclamations
 CREATE TABLE IF NOT EXISTS issue_reports (
     report_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -150,6 +135,34 @@ CREATE TABLE IF NOT EXISTS issue_reports (
     FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
 );
 
-CREATE DATABASE taxi_app_test;
+-- 📌 Insertion des utilisateurs par défaut
+INSERT INTO users (username, email, password_hash, full_name, phone_number, user_type) VALUES
+('admin', 'admin@example.com', 'hashed_password', 'Admin System', '0611111111', 'admin'),
+('driver1', 'driver1@example.com', 'hashed_password', 'John Doe', '0622222222', 'driver'),
+('passenger1', 'passenger1@example.com', 'hashed_password', 'Jane Doe', '0633333333', 'passenger');
 
+-- 📌 Insertion des véhicules par défaut
+INSERT INTO vehicles (driver_id, marque, model, year, license_plate, couleur, status) VALUES
+(2, 'Toyota', 'Corolla', 2020, 'AB-123-CD', 'Bleu', 'active'),
+(2, 'Renault', 'Clio', 2019, 'XY-456-ZT', 'Noir', 'inactive');
 
+-- 📌 Insertion des trajets par défaut
+INSERT INTO rides (passenger_id, driver_id, vehicle_id, pickup_location, dropoff_location, pickup_time, status, fare) VALUES
+(3, 2, 1, 'Paris', 'Lyon', NOW(), 'completed', 50.00),
+(3, 2, 2, 'Marseille', 'Nice', NOW(), 'canceled', 35.00);
+
+-- 📌 Insertion des paiements par défaut
+INSERT INTO payments (ride_id, amount, payment_method, payment_status, transaction_id) VALUES
+(1, 50.00, 'credit_card', 'completed', 'TRANS12345'),
+(2, 35.00, 'mobile_payment', 'failed', 'TRANS67890');
+
+-- 📌 Insertion des QR Codes par défaut
+INSERT INTO qr_codes (user_id, qr_data) VALUES
+(2, 'QRCODE_DRIVER_123'),
+(3, 'QRCODE_PASSENGER_456');
+
+-- 📌 Insertion des paramètres par défaut
+INSERT INTO settings (base_fare, cost_per_km, max_distance_km) VALUES (5.00, 1.50, 100);
+
+-- 📌 Création de la base de tests
+CREATE DATABASE IF NOT EXISTS taxi_app_test;

@@ -5,27 +5,31 @@ const db = require("../config/db");
 const multer = require("multer");
 const fs = require("fs");
 
-// Configuration de l'upload des images de profil
-
-
 // 📌 Vérifie si le dossier `uploads/` existe, sinon le créer
 const uploadDir = "uploads/";
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// 📌 Configuration du stockage des fichiers
+// 📌 Configuration du stockage des fichiers avec validation
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, uploadDir); // 📂 Stocke les images dans le dossier `uploads/`
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         cb(null, req.user.user_id + "_" + Date.now() + "_" + file.originalname);
     },
 });
-const upload = multer({ storage: storage });
-
-
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 🔹 Limite à 5MB
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith("image/")) {
+            return cb(new Error("Seuls les fichiers images sont autorisés !"), false);
+        }
+        cb(null, true);
+    },
+});
 
 // 🔹 1. Récupérer les informations du profil
 router.get("/profile", authMiddleware, async (req, res) => {
@@ -45,13 +49,28 @@ router.get("/profile", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 2. Mettre à jour les informations utilisateur
+// 🔹 2. Mettre à jour les informations utilisateur (Vérification de l'unicité du numéro)
 router.put("/update", authMiddleware, async (req, res) => {
     try {
         const { username, full_name, phone_number } = req.body;
 
+        if (!username && !full_name && !phone_number) {
+            return res.status(400).json({ message: "Aucune donnée à mettre à jour." });
+        }
+
+        // Vérifier si le numéro est déjà utilisé par un autre utilisateur
+        if (phone_number) {
+            const [existingUsers] = await db.query(
+                "SELECT * FROM users WHERE phone_number = ? AND user_id != ?",
+                [phone_number, req.user.user_id]
+            );
+            if (existingUsers.length > 0) {
+                return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
+            }
+        }
+
         await db.query(
-            "UPDATE users SET username = ?, full_name = ?, phone_number = ? WHERE user_id = ?",
+            "UPDATE users SET username = COALESCE(?, username), full_name = COALESCE(?, full_name), phone_number = COALESCE(?, phone_number) WHERE user_id = ?",
             [username, full_name, phone_number, req.user.user_id]
         );
 
@@ -61,11 +80,21 @@ router.put("/update", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 3. Mettre à jour la photo de profil
+// 🔹 3. Mettre à jour la photo de profil (Avec suppression de l'ancienne)
 router.post("/upload-photo", authMiddleware, upload.single("profile_image"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "Aucune image envoyée." });
+        }
+
+        // Récupérer l'ancienne image
+        const [user] = await db.query("SELECT profile_image_url FROM users WHERE user_id = ?", [req.user.user_id]);
+
+        if (user.length > 0 && user[0].profile_image_url) {
+            const oldImagePath = user[0].profile_image_url.split("/uploads/")[1];
+            if (oldImagePath && fs.existsSync(`${uploadDir}/${oldImagePath}`)) {
+                fs.unlinkSync(`${uploadDir}/${oldImagePath}`); // 🔥 Supprime l'ancienne image
+            }
         }
 
         // Générer le lien complet en local
@@ -80,6 +109,5 @@ router.post("/upload-photo", authMiddleware, upload.single("profile_image"), asy
         res.status(500).json({ error: error.message });
     }
 });
-
 
 module.exports = router;
