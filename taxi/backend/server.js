@@ -22,6 +22,7 @@ const historyRoutes = require("./routes/historyRoutes"); // ✅ Correct
 const reportRoutes = require("./routes/reportRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const qrCodeRoutes = require("./routes/qrCodeRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -50,6 +51,7 @@ app.use("/api/history", historyRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/qrcodes", qrCodeRoutes);
+app.use("/api/users", userRoutes);
 
 // 📌 Gestion des WebSockets
 let connectedUsers = {};
