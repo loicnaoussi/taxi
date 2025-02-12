@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS taxi_app;
 USE taxi_app;
 
--- 📌 Table des utilisateurs (passagers & chauffeurs & admins)
+-- 📌 Table des utilisateurs (passagers, chauffeurs, admins)
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     model VARCHAR(50) NOT NULL,
     year INT CHECK (year >= 2000),
     license_plate VARCHAR(20) UNIQUE NOT NULL,
+    immatriculation VARCHAR(20) UNIQUE NOT NULL,
     couleur VARCHAR(20) NOT NULL,
     status ENUM('active', 'inactive') DEFAULT 'active',
     carte_grise VARCHAR(255),
@@ -38,12 +39,12 @@ CREATE TABLE IF NOT EXISTS rides (
     vehicle_id INT,
     pickup_location VARCHAR(255) NOT NULL,
     dropoff_location VARCHAR(255) NOT NULL,
-    pickup_time DATETIME,
-    dropoff_time DATETIME,
+    pickup_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    dropoff_time DATETIME NULL,
     status ENUM('requested', 'accepted', 'in_progress', 'completed', 'canceled') DEFAULT 'requested',
     fare DECIMAL(10,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (passenger_id) REFERENCES users(user_id),
+    FOREIGN KEY (passenger_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE SET NULL,
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE SET NULL
 );
@@ -135,6 +136,18 @@ CREATE TABLE IF NOT EXISTS issue_reports (
     FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
 );
 
+-- ✅ 📌 Correction : Ajout de la table `verifications` pour la vérification d'identité
+CREATE TABLE IF NOT EXISTS verifications (
+    verification_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    verification_video VARCHAR(255) NOT NULL,
+    cni_front VARCHAR(255) NOT NULL,
+    cni_back VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 -- 📌 Insertion des utilisateurs par défaut
 INSERT INTO users (username, email, password_hash, full_name, phone_number, user_type) VALUES
 ('admin', 'admin@example.com', 'hashed_password', 'Admin System', '0611111111', 'admin'),
@@ -142,27 +155,15 @@ INSERT INTO users (username, email, password_hash, full_name, phone_number, user
 ('passenger1', 'passenger1@example.com', 'hashed_password', 'Jane Doe', '0633333333', 'passenger');
 
 -- 📌 Insertion des véhicules par défaut
-INSERT INTO vehicles (driver_id, marque, model, year, license_plate, couleur, status) VALUES
-(2, 'Toyota', 'Corolla', 2020, 'AB-123-CD', 'Bleu', 'active'),
-(2, 'Renault', 'Clio', 2019, 'XY-456-ZT', 'Noir', 'inactive');
+INSERT INTO vehicles (driver_id, marque, model, year, license_plate, immatriculation, couleur, status) VALUES
+(2, 'Toyota', 'Corolla', 2020, 'AB-123-CD', 'ABC-123', 'Bleu', 'active'),
+(2, 'Renault', 'Clio', 2019, 'XY-456-ZT', 'XYZ-456', 'Noir', 'inactive');
 
 -- 📌 Insertion des trajets par défaut
 INSERT INTO rides (passenger_id, driver_id, vehicle_id, pickup_location, dropoff_location, pickup_time, status, fare) VALUES
 (3, 2, 1, 'Paris', 'Lyon', NOW(), 'completed', 50.00),
 (3, 2, 2, 'Marseille', 'Nice', NOW(), 'canceled', 35.00);
 
--- 📌 Insertion des paiements par défaut
-INSERT INTO payments (ride_id, amount, payment_method, payment_status, transaction_id) VALUES
-(1, 50.00, 'credit_card', 'completed', 'TRANS12345'),
-(2, 35.00, 'mobile_payment', 'failed', 'TRANS67890');
-
--- 📌 Insertion des QR Codes par défaut
-INSERT INTO qr_codes (user_id, qr_data) VALUES
-(2, 'QRCODE_DRIVER_123'),
-(3, 'QRCODE_PASSENGER_456');
-
 -- 📌 Insertion des paramètres par défaut
 INSERT INTO settings (base_fare, cost_per_km, max_distance_km) VALUES (5.00, 1.50, 100);
 
--- 📌 Création de la base de tests
-CREATE DATABASE IF NOT EXISTS taxi_app_test;
