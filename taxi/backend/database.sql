@@ -148,6 +148,17 @@ CREATE TABLE IF NOT EXISTS verifications (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- 📌 Ajout de la table user_location pour stocker les positions en temps réel
+CREATE TABLE IF NOT EXISTS user_location (
+    location_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+
 -- 📌 Insertion des utilisateurs par défaut
 INSERT INTO users (username, email, password_hash, full_name, phone_number, user_type) VALUES
 ('admin', 'admin@example.com', 'hashed_password', 'Admin System', '0611111111', 'admin'),
