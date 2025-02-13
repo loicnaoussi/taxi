@@ -61,29 +61,7 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
 );
 
--- 📌 Table des contacts d’urgence
-CREATE TABLE IF NOT EXISTS emergency_contacts (
-    contact_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    contact_name VARCHAR(100) NOT NULL,
-    contact_phone VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- 📌 Table des évaluations et avis
-CREATE TABLE IF NOT EXISTS reviews (
-    review_id INT AUTO_INCREMENT PRIMARY KEY,
-    ride_id INT NOT NULL,
-    reviewer_id INT NOT NULL,
-    rating INT CHECK (rating BETWEEN 1 AND 5),
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE,
-    FOREIGN KEY (reviewer_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- 📌 Table des notifications
+-- 📌 Table des notifications (Correction pour WebSockets)
 CREATE TABLE IF NOT EXISTS notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -94,26 +72,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 📌 Table des QR Codes (identification des utilisateurs)
-CREATE TABLE IF NOT EXISTS qr_codes (
-    qr_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    qr_data TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- 📌 Table des localisations GPS
-CREATE TABLE IF NOT EXISTS user_location (
-    location_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    latitude DECIMAL(9,6) NOT NULL,
-    longitude DECIMAL(9,6) NOT NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- 📌 Table des paramètres de l’application
+-- 📌 Table des paramètres de l’application (Correction pour éviter l'erreur)
 CREATE TABLE IF NOT EXISTS settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     base_fare DECIMAL(10,2) NOT NULL DEFAULT 5.00,
@@ -123,6 +82,33 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- 📌 Table des localisations en temps réel
+CREATE TABLE IF NOT EXISTS user_location (
+    location_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    latitude DECIMAL(9,6) DEFAULT 0.000000,
+    longitude DECIMAL(9,6) DEFAULT 0.000000,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 📌 Table des QR Codes (identification des utilisateurs)
+CREATE TABLE IF NOT EXISTS qr_codes (
+    qr_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    qr_data VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+-- 📌 Table des contacts d’urgence
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+    contact_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    contact_name VARCHAR(100) NOT NULL,
+    contact_phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 -- 📌 Table des signalements et réclamations
 CREATE TABLE IF NOT EXISTS issue_reports (
     report_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -135,8 +121,7 @@ CREATE TABLE IF NOT EXISTS issue_reports (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
 );
-
--- ✅ 📌 Correction : Ajout de la table `verifications` pour la vérification d'identité
+-- 📌 Création de la table des vérifications
 CREATE TABLE IF NOT EXISTS verifications (
     verification_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -147,34 +132,4 @@ CREATE TABLE IF NOT EXISTS verifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
-
--- 📌 Ajout de la table user_location pour stocker les positions en temps réel
-CREATE TABLE IF NOT EXISTS user_location (
-    location_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
-    latitude DECIMAL(9,6) NOT NULL,
-    longitude DECIMAL(9,6) NOT NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
-
--- 📌 Insertion des utilisateurs par défaut
-INSERT INTO users (username, email, password_hash, full_name, phone_number, user_type) VALUES
-('admin', 'admin@example.com', 'hashed_password', 'Admin System', '0611111111', 'admin'),
-('driver1', 'driver1@example.com', 'hashed_password', 'John Doe', '0622222222', 'driver'),
-('passenger1', 'passenger1@example.com', 'hashed_password', 'Jane Doe', '0633333333', 'passenger');
-
--- 📌 Insertion des véhicules par défaut
-INSERT INTO vehicles (driver_id, marque, model, year, license_plate, immatriculation, couleur, status) VALUES
-(2, 'Toyota', 'Corolla', 2020, 'AB-123-CD', 'ABC-123', 'Bleu', 'active'),
-(2, 'Renault', 'Clio', 2019, 'XY-456-ZT', 'XYZ-456', 'Noir', 'inactive');
-
--- 📌 Insertion des trajets par défaut
-INSERT INTO rides (passenger_id, driver_id, vehicle_id, pickup_location, dropoff_location, pickup_time, status, fare) VALUES
-(3, 2, 1, 'Paris', 'Lyon', NOW(), 'completed', 50.00),
-(3, 2, 2, 'Marseille', 'Nice', NOW(), 'canceled', 35.00);
-
--- 📌 Insertion des paramètres par défaut
-INSERT INTO settings (base_fare, cost_per_km, max_distance_km) VALUES (5.00, 1.50, 100);
 

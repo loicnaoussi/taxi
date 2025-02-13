@@ -60,21 +60,22 @@ router.post("/add", authMiddleware, async (req, res) => {
 	}
 });
 
-// 📌 2. Récupérer la liste des contacts d'urgence de l'utilisateur
+// 📌 Récupérer les contacts d’un utilisateur
 router.get("/my-contacts", authMiddleware, async (req, res) => {
-	try {
-		const [contacts] = await db.query(
-			"SELECT contact_id, contact_name, contact_phone FROM emergency_contacts WHERE user_id = ?",
-			[req.user.user_id]
-		);
+    try {
+        const [contacts] = await db.query(
+            "SELECT contact_id, contact_name, contact_phone, created_at FROM emergency_contacts WHERE user_id = ?",
+            [req.user.user_id]
+        );
 
-		res.json({ total: contacts.length, contacts });
-	} catch (error) {
-		if (!res.headersSent) {
-			return res.status(500).json({ error: error.message });
-		}
-	}
+        // ✅ Toujours renvoyer un tableau (même vide)
+        res.status(200).json(Array.isArray(contacts) ? contacts : []);
+    } catch (error) {
+        console.error("🔥 Erreur lors de la récupération des contacts :", error);
+        res.status(500).json({ error: error.message });
+    }
 });
+
 
 // 📌 3. Supprimer un contact d'urgence (Vérification requise)
 router.delete("/delete/:contact_id", authMiddleware, async (req, res) => {

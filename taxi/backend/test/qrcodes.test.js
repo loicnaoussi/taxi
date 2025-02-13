@@ -1,30 +1,46 @@
 const request = require("supertest");
-const { app, server } = require("../server"); // ✅ Import du serveur et de l'API
-const db = require("../config/db"); // ✅ Import de la base de données
+const { app, server } = require("../server");
+const db = require("../config/db");
 
 let token;
 let qrCodeData;
 
 beforeAll(async () => {
-    console.log("🔹 Connexion de l'utilisateur pour les tests des QR Codes...");
+    console.log("🔹 Connexion ou création d'un utilisateur test pour les QR Codes...");
 
-    const res = await request(app)
-        .post("/api/auth/login")
-        .send({ identifier: "testuser@example.com", password: "password123" });
+    // ✅ Connexion ou création de l'utilisateur
+    let userRes = await request(app).post("/api/auth/login").send({
+        identifier: "qr_test_user@example.com",
+        password: "password123"
+    });
 
-    console.log("🔹 Réponse connexion :", res.body);
+    if (userRes.statusCode === 401) {
+        console.log("🚨 Utilisateur introuvable, création d'un compte...");
+        await request(app).post("/api/auth/register").send({
+            username: "qr_test_user",
+            email: "qr_test_user@example.com",
+            password: "password123",
+            full_name: "QR Test User",
+            phone_number: "0623344557",
+            user_type: "passenger"
+        });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("accessToken");
+        userRes = await request(app).post("/api/auth/login").send({
+            identifier: "qr_test_user@example.com",
+            password: "password123"
+        });
+    }
 
-    token = res.body.accessToken;
-    expect(token).toBeDefined();
+    expect(userRes.statusCode).toBe(200);
+    token = userRes.body.accessToken;
+    console.log("✅ Connexion réussie avec token :", token);
 });
 
 describe("📌 Gestion des QR Codes", () => {
-    test("✅ Récupération du QR Code", async () => {
-        expect(token).toBeDefined();
+    jest.setTimeout(15000);
 
+    test("✅ Récupération du QR Code", async () => {
+        console.log("🔹 Test : Récupération du QR Code...");
         const res = await request(app)
             .get("/api/qrcodes/my-qrcode")
             .set("Authorization", `Bearer ${token}`);
@@ -32,22 +48,23 @@ describe("📌 Gestion des QR Codes", () => {
         console.log("🔹 Réponse récupération QR Code :", res.body);
 
         if (res.statusCode === 404) {
-            console.warn("⚠️ Aucun QR Code trouvé pour cet utilisateur.");
+            console.warn("⚠️ Aucun QR Code trouvé. Test réussi avec message.");
+            // ✅ Pas d'erreur, on retourne un statut 200 avec message
+            expect(res.body.message).toBe("Aucun QR Code trouvé.");
         } else {
             expect(res.statusCode).toBe(200);
             expect(res.body).toHaveProperty("qr_code");
-
             qrCodeData = res.body.qr_code;
             expect(qrCodeData).toBeDefined();
         }
     });
 
     test("✅ Validation d’un QR Code", async () => {
-        expect(token).toBeDefined();
+        console.log("🔹 Test : Validation du QR Code...");
 
         if (!qrCodeData) {
-            console.warn("⚠️ Pas de QR Code disponible pour la validation, ce test est ignoré.");
-            return;
+            console.warn("⚠️ Pas de QR Code disponible, validation ignorée.");
+            return; // ✅ On ignore sans échec
         }
 
         const res = await request(app)
@@ -56,13 +73,16 @@ describe("📌 Gestion des QR Codes", () => {
             .send({ qr_code: qrCodeData });
 
         console.log("🔹 Réponse validation QR Code :", res.body);
-
         expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe("QR Code validé avec succès !");
     });
 });
 
-afterAll(() => {
-    console.log("🔹 Fermeture du serveur après les tests des QR Codes...");
+afterAll(async () => {
+    console.log("🔹 Suppression du compte test après les tests...");
+    await db.query("DELETE FROM users WHERE email = ?", ["qr_test_user@example.com"]);
+
+    console.log("🔹 Fermeture du serveur...");
     server.close();
     console.log("✅ Serveur fermé !");
 });

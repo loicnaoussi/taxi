@@ -6,17 +6,29 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// 📌 Vérifier si la table 'verifications' existe avant d'exécuter une requête
+// ✅ Création Automatique de la Table `verifications` si elle est absente
 async function ensureVerificationTableExists() {
     try {
-        await db.query("SELECT 1 FROM verifications LIMIT 1");
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS verifications (
+                verification_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                verification_video VARCHAR(255) NOT NULL,
+                cni_front VARCHAR(255) NOT NULL,
+                cni_back VARCHAR(255) NOT NULL,
+                status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            )
+        `);
+        console.log("✅ Table `verifications` vérifiée ou créée.");
     } catch (error) {
-        console.error("🚨 La table 'verifications' n'existe pas. Veuillez l'ajouter à la base de données.");
+        console.error("🚨 Échec de création de la table `verifications` :", error);
         throw new Error("Table 'verifications' manquante dans la base de données.");
     }
 }
 
-// 📌 Configuration de Multer pour gérer les fichiers d’identité
+// 📂 Configuration de Multer (Upload des fichiers)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadPath = path.join(__dirname, "../uploads/verifications");
@@ -32,7 +44,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 📌 Envoi des fichiers de vérification
+// 📌 1️⃣ Envoi des Fichiers de Vérification
 router.post("/upload-verification", authMiddleware, upload.fields([
     { name: "verification_video", maxCount: 1 },
     { name: "cni_front", maxCount: 1 },
@@ -49,7 +61,6 @@ router.post("/upload-verification", authMiddleware, upload.fields([
         const cniFront = req.files.cni_front[0].filename;
         const cniBack = req.files.cni_back[0].filename;
 
-        // Vérifier si l'utilisateur a déjà une vérification en attente
         const [existing] = await db.query("SELECT * FROM verifications WHERE user_id = ?", [req.user.user_id]);
 
         if (existing.length > 0) {
@@ -68,12 +79,15 @@ router.post("/upload-verification", authMiddleware, upload.fields([
     }
 });
 
-// 📌 Récupération du statut de vérification
+// 📌 2️⃣ Récupération du Statut de Vérification
 router.get("/status", authMiddleware, async (req, res) => {
     try {
         await ensureVerificationTableExists();
 
-        const [verification] = await db.query("SELECT status FROM verifications WHERE user_id = ?", [req.user.user_id]);
+        const [verification] = await db.query(
+            "SELECT status FROM verifications WHERE user_id = ?",
+            [req.user.user_id]
+        );
 
         if (verification.length === 0) {
             return res.status(404).json({ message: "Aucune vérification trouvée." });
@@ -86,44 +100,44 @@ router.get("/status", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Mise à jour du statut de vérification (Admin uniquement)
+// 📌 3️⃣ Mise à Jour du Statut (Admin uniquement)
 router.put("/update/:user_id", authMiddleware, async (req, res) => {
     try {
         await ensureVerificationTableExists();
 
         if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent modifier les statuts de vérification." });
+            return res.status(403).json({ message: "Seuls les administrateurs peuvent modifier les statuts." });
         }
 
         const { user_id } = req.params;
         const { status } = req.body;
 
         if (!["pending", "approved", "rejected"].includes(status)) {
-            return res.status(400).json({ message: "Statut invalide. Valeurs autorisées : 'pending', 'approved', 'rejected'." });
+            return res.status(400).json({ message: "Statut invalide. Valeurs : 'pending', 'approved', 'rejected'." });
         }
 
         const [existing] = await db.query("SELECT * FROM verifications WHERE user_id = ?", [user_id]);
 
         if (existing.length === 0) {
-            return res.status(404).json({ message: "Aucune vérification trouvée pour cet utilisateur." });
+            return res.status(404).json({ message: "Aucune vérification trouvée." });
         }
 
         await db.query("UPDATE verifications SET status = ? WHERE user_id = ?", [status, user_id]);
 
-        res.json({ message: `Statut de vérification mis à jour en '${status}'` });
+        res.json({ message: `Statut de vérification mis à jour : '${status}'` });
     } catch (error) {
         console.error("🚨 Erreur lors de la mise à jour du statut de vérification :", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// 📌 Suppression d'une vérification (Admin uniquement)
+// 📌 4️⃣ Suppression d'une Vérification (Admin uniquement)
 router.delete("/delete/:user_id", authMiddleware, async (req, res) => {
     try {
         await ensureVerificationTableExists();
 
         if (req.user.user_type !== "admin") {
-            return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs peuvent supprimer une vérification." });
+            return res.status(403).json({ message: "Seuls les administrateurs peuvent supprimer une vérification." });
         }
 
         const { user_id } = req.params;
@@ -131,7 +145,7 @@ router.delete("/delete/:user_id", authMiddleware, async (req, res) => {
         const [existing] = await db.query("SELECT * FROM verifications WHERE user_id = ?", [user_id]);
 
         if (existing.length === 0) {
-            return res.status(404).json({ message: "Aucune vérification trouvée pour cet utilisateur." });
+            return res.status(404).json({ message: "Aucune vérification trouvée." });
         }
 
         await db.query("DELETE FROM verifications WHERE user_id = ?", [user_id]);

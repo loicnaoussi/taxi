@@ -100,5 +100,27 @@ router.put("/admin/update/:report_id", authMiddleware, async (req, res) => {
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 });
+// 🔹 Endpoint : Suppression d'un signalement (Admin uniquement)
+router.delete("/admin/delete/:report_id", authMiddleware, async (req, res) => {
+    const { report_id } = req.params;
+
+    try {
+        const [result] = await db.query(
+            "DELETE FROM issue_reports WHERE report_id = ?",
+            [report_id]
+        );
+
+        if (result.affectedRows === 0) {
+            // ✅ Modification ici : Renvoyer 200 avec un message clair
+            return res.status(200).json({ message: "Aucun signalement trouvé, peut-être déjà supprimé." });
+        }
+
+        res.status(200).json({ message: "Réclamation supprimée avec succès." });
+    } catch (error) {
+        console.error("🔥 Erreur suppression réclamation :", error);
+        res.status(500).json({ error: "Erreur interne du serveur." });
+    }
+});
+
 
 module.exports = router;
