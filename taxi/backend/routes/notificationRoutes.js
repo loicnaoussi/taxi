@@ -3,9 +3,54 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-module.exports = (io) => {
+module.exports = (io) =>{
 
-    // 📌 Envoyer une notification (Avec WebSockets)
+    /**
+     * @swagger
+     * components:
+     *   securitySchemes:
+     *     bearerAuth:
+     *       type: http
+     *       scheme: bearer
+     *       bearerFormat: JWT
+     */
+
+    /**
+     * @swagger
+     * /api/notifications/send:
+     *   post:
+     *     summary: Envoyer une notification à un utilisateur
+     *     tags: [Notifications]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               user_id:
+     *                 type: integer
+     *                 description: ID de l'utilisateur
+     *               title:
+     *                 type: string
+     *               message:
+     *                 type: string
+     *             required:
+     *               - user_id
+     *               - title
+     *               - message
+     *     responses:
+     *       201:
+     *         description: Notification envoyée avec succès
+     *       400:
+     *         description: Champs manquants
+     *       403:
+     *         description: Non autorisé (JWT manquant ou invalide)
+     *       500:
+     *         description: Erreur serveur
+     */
     router.post("/send", authMiddleware, async (req, res) => {
         try {
             const { user_id, title, message } = req.body;
@@ -28,7 +73,7 @@ module.exports = (io) => {
             }
 
             // 📡 Vérifier si l'utilisateur est connecté pour lui envoyer une notification en temps réel
-            if (io.sockets.sockets.size > 0 && io.sockets.adapter.rooms.has(`user_${user_id}`)) {
+            if (io && io.sockets.adapter.rooms.has(`user_${user_id}`)) {
                 console.log(`📡 Envoi WebSocket à l'utilisateur ${user_id}`);
                 io.to(`user_${user_id}`).emit("new_notification", { title, message });
             } else {
@@ -42,7 +87,22 @@ module.exports = (io) => {
         }
     });
 
-    // 📌 Récupérer les notifications d'un utilisateur
+    /**
+     * @swagger
+     * /api/notifications/my-notifications:
+     *   get:
+     *     summary: Récupérer les notifications de l'utilisateur connecté
+     *     tags: [Notifications]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Liste des notifications
+     *       403:
+     *         description: Non autorisé (JWT manquant ou invalide)
+     *       500:
+     *         description: Erreur serveur
+     */
     router.get("/my-notifications", authMiddleware, async (req, res) => {
         try {
             const userId = req.user.user_id;
@@ -69,7 +129,24 @@ module.exports = (io) => {
         }
     });
 
-    // 📌 Marquer toutes les notifications comme lues
+    /**
+     * @swagger
+     * /api/notifications/mark-as-read:
+     *   put:
+     *     summary: Marquer toutes les notifications comme lues
+     *     tags: [Notifications]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Toutes les notifications ont été marquées comme lues
+     *       400:
+     *         description: Aucune notification à marquer comme lue
+     *       403:
+     *         description: Non autorisé (JWT manquant ou invalide)
+     *       500:
+     *         description: Erreur serveur
+     */
     router.put("/mark-as-read", authMiddleware, async (req, res) => {
         try {
             const userId = req.user.user_id;

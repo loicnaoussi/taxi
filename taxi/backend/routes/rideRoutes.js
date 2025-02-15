@@ -3,7 +3,48 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 🔹 1️⃣ Créer un trajet (Passager uniquement)
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/rides/create:
+ *   post:
+ *     summary: Créer un trajet (Passager uniquement)
+ *     tags: [Trajets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pickup_location:
+ *                 type: string
+ *                 example: "Paris"
+ *               dropoff_location:
+ *                 type: string
+ *                 example: "Lyon"
+ *               fare:
+ *                 type: number
+ *                 example: 50.00
+ *     responses:
+ *       201:
+ *         description: Trajet créé avec succès
+ *       403:
+ *         description: Seuls les passagers peuvent créer des trajets
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/create", authMiddleware, async (req, res) => {
     const { pickup_location, dropoff_location, fare } = req.body;
 
@@ -27,7 +68,33 @@ router.post("/create", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 2️⃣ Accepter un trajet (Chauffeur uniquement)
+/**
+ * @swagger
+ * /api/rides/accept/{ride_id}:
+ *   post:
+ *     summary: Accepter un trajet (Chauffeur uniquement)
+ *     tags: [Trajets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ride_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du trajet à accepter
+ *     responses:
+ *       200:
+ *         description: Trajet accepté avec succès
+ *       400:
+ *         description: Ce trajet n'est plus disponible
+ *       403:
+ *         description: Seuls les chauffeurs peuvent accepter des trajets
+ *       404:
+ *         description: Trajet non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/accept/:ride_id", authMiddleware, async (req, res) => {
     if (req.user.user_type !== "driver") {
         return res.status(403).json({ message: "Seuls les chauffeurs peuvent accepter des trajets." });
@@ -54,14 +121,40 @@ router.post("/accept/:ride_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 3️⃣ Annuler un trajet (Passager ou Chauffeur)
+/**
+ * @swagger
+ * /api/rides/cancel/{ride_id}:
+ *   post:
+ *     summary: Annuler un trajet (Passager ou Chauffeur)
+ *     tags: [Trajets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ride_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du trajet à annuler
+ *     responses:
+ *       200:
+ *         description: Trajet annulé avec succès
+ *       403:
+ *         description: Vous ne pouvez pas annuler ce trajet
+ *       404:
+ *         description: Trajet non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/cancel/:ride_id", authMiddleware, async (req, res) => {
     const { ride_id } = req.params;
 
     try {
         const [ride] = await db.query("SELECT * FROM rides WHERE ride_id = ?", [ride_id]);
 
-        if (ride.length === 0) return res.status(404).json({ message: "Trajet non trouvé." });
+        if (ride.length === 0) {
+            return res.status(404).json({ message: "Trajet non trouvé." });
+        }
 
         if (ride[0].passenger_id !== req.user.user_id && ride[0].driver_id !== req.user.user_id) {
             return res.status(403).json({ message: "Vous ne pouvez pas annuler ce trajet." });
@@ -69,13 +162,26 @@ router.post("/cancel/:ride_id", authMiddleware, async (req, res) => {
 
         await db.query("UPDATE rides SET status = 'canceled' WHERE ride_id = ?", [ride_id]);
 
-        res.json({ message: "Trajet annulé avec succès." });
+        res.status(200).json({ message: "Trajet annulé avec succès." });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// 🔹 4️⃣ Voir les trajets de l'utilisateur connecté
+/**
+ * @swagger
+ * /api/rides/my-rides:
+ *   get:
+ *     summary: Voir les trajets de l'utilisateur connecté
+ *     tags: [Trajets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des trajets de l'utilisateur
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-rides", authMiddleware, async (req, res) => {
     try {
         const [rides] = await db.query(
@@ -89,24 +195,37 @@ router.get("/my-rides", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 5️⃣ Récupérer un trajet spécifique par ID
-router.get("/:ride_id", authMiddleware, async (req, res) => {
-    const { ride_id } = req.params;
-
-    try {
-        const [ride] = await db.query("SELECT * FROM rides WHERE ride_id = ?", [ride_id]);
-
-        if (ride.length === 0) {
-            return res.status(404).json({ message: "Trajet non trouvé." });
-        }
-
-        res.json(ride[0]);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 🔹 6️⃣ Mise à jour de la position GPS du chauffeur
+/**
+ * @swagger
+ * /api/rides/update-location:
+ *   post:
+ *     summary: Mettre à jour la position GPS du chauffeur
+ *     tags: [Trajets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               latitude:
+ *                 type: number
+ *                 example: 48.8566
+ *               longitude:
+ *                 type: number
+ *                 example: 2.3522
+ *     responses:
+ *       200:
+ *         description: Position mise à jour avec succès
+ *       400:
+ *         description: Latitude et longitude sont requis
+ *       403:
+ *         description: Seuls les chauffeurs peuvent mettre à jour leur position
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/update-location", authMiddleware, async (req, res) => {
     const { latitude, longitude } = req.body;
     const userId = req.user.user_id;
@@ -142,7 +261,29 @@ router.post("/update-location", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 7️⃣ Récupération de la position d’un chauffeur
+/**
+ * @swagger
+ * /api/rides/location/{driver_id}:
+ *   get:
+ *     summary: Récupérer la position d’un chauffeur
+ *     tags: [Trajets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: driver_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du chauffeur
+ *     responses:
+ *       200:
+ *         description: Position trouvée
+ *       404:
+ *         description: Position non trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/location/:driver_id", authMiddleware, async (req, res) => {
     const { driver_id } = req.params;
 

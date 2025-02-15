@@ -3,19 +3,30 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📌 1. Enregistrer une action dans l'historique
-async function logHistory(user_id, ride_id, action_type, details) {
-    try {
-        await db.query(
-            "INSERT INTO history (user_id, ride_id, action_type, details, timestamp) VALUES (?, ?, ?, ?, NOW())",
-            [user_id, ride_id, action_type, details]
-        );
-    } catch (error) {
-        console.error("❌ Erreur lors de l'enregistrement de l'historique :", error);
-    }
-}
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 
-// 📌 2. Voir l'historique des trajets d'un utilisateur (passager ou chauffeur)
+/**
+ * @swagger
+ * /api/history/my-rides:
+ *   get:
+ *     summary: Voir l'historique des trajets (passager ou chauffeur)
+ *     tags: [History]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des trajets
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-rides", authMiddleware, async (req, res) => {
     try {
         const [rides] = await db.query(
@@ -29,7 +40,29 @@ router.get("/my-rides", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 3. Récupérer les détails d'un trajet spécifique
+/**
+ * @swagger
+ * /api/history/ride/{ride_id}:
+ *   get:
+ *     summary: Récupérer les détails d'un trajet spécifique
+ *     tags: [History]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ride_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du trajet
+ *     responses:
+ *       200:
+ *         description: Détails du trajet
+ *       404:
+ *         description: Trajet non trouvé ou non accessible
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/ride/:ride_id", authMiddleware, async (req, res) => {
     try {
         const { ride_id } = req.params;
@@ -48,7 +81,20 @@ router.get("/ride/:ride_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 4. Voir l'historique des actions d'un utilisateur
+/**
+ * @swagger
+ * /api/history/actions/my-history:
+ *   get:
+ *     summary: Voir l'historique des actions d'un utilisateur
+ *     tags: [History]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des actions
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/actions/my-history", authMiddleware, async (req, res) => {
     try {
         const [history] = await db.query(
@@ -62,14 +108,31 @@ router.get("/actions/my-history", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 5. Voir tout l'historique des actions (Admin uniquement)
+/**
+ * @swagger
+ * /api/history/actions/admin/history:
+ *   get:
+ *     summary: Voir tout l'historique des actions (Admin uniquement)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste de toutes les actions
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/actions/admin/history", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
             return res.status(403).json({ message: "Accès réservé aux administrateurs." });
         }
 
-        const [history] = await db.query("SELECT history_id, user_id, ride_id, action_type, details, timestamp FROM history ORDER BY timestamp DESC LIMIT 100");
+        const [history] = await db.query(
+            "SELECT history_id, user_id, ride_id, action_type, details, timestamp FROM history ORDER BY timestamp DESC LIMIT 100"
+        );
 
         res.json({ total: history.length, history });
     } catch (error) {
@@ -77,7 +140,29 @@ router.get("/actions/admin/history", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 6. Voir l'historique des actions d'un utilisateur spécifique (Admin)
+/**
+ * @swagger
+ * /api/history/actions/admin/user/{user_id}:
+ *   get:
+ *     summary: Voir l'historique des actions d'un utilisateur spécifique (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur
+ *     responses:
+ *       200:
+ *         description: Liste des actions de l'utilisateur
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/actions/admin/user/:user_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
@@ -96,4 +181,4 @@ router.get("/actions/admin/user/:user_id", authMiddleware, async (req, res) => {
     }
 });
 
-module.exports = router; // 🔹 Corrigé : On exporte directement `router`
+module.exports = router;

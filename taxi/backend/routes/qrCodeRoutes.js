@@ -3,7 +3,40 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📌 Générer et récupérer un QR Code pour un utilisateur
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/qrcodes/my-qrcode:
+ *   get:
+ *     summary: Récupérer le QR Code de l'utilisateur
+ *     tags: [QR Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: QR Code récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 qr_code:
+ *                   type: string
+ *                   example: "QR123456789"
+ *       404:
+ *         description: Aucun QR Code trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-qrcode", authMiddleware, async (req, res) => {
     try {
         const [qrCode] = await db.query("SELECT qr_data FROM qr_codes WHERE user_id = ?", [req.user.user_id]);
@@ -18,7 +51,45 @@ router.get("/my-qrcode", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Vérifier un QR Code
+/**
+ * @swagger
+ * /api/qrcodes/validate:
+ *   post:
+ *     summary: Vérifier la validité d'un QR Code
+ *     tags: [QR Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               qr_code:
+ *                 type: string
+ *                 example: "QR123456789"
+ *     responses:
+ *       200:
+ *         description: QR Code valide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "QR Code valide."
+ *                 user_id:
+ *                   type: integer
+ *                   example: 123
+ *       400:
+ *         description: Le QR Code est requis
+ *       404:
+ *         description: QR Code invalide
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/validate", authMiddleware, async (req, res) => {
     try {
         const { qr_code } = req.body;

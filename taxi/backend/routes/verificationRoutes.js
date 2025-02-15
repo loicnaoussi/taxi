@@ -44,7 +44,38 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 📌 1️⃣ Envoi des Fichiers de Vérification
+/**
+ * @swagger
+ * /api/verifications/upload-verification:
+ *   post:
+ *     summary: Envoyer les fichiers de vérification (Vidéo + CNI)
+ *     tags: [Vérifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               verification_video:
+ *                 type: string
+ *                 format: binary
+ *               cni_front:
+ *                 type: string
+ *                 format: binary
+ *               cni_back:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Fichiers de vérification envoyés avec succès
+ *       400:
+ *         description: Tous les fichiers sont requis
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/upload-verification", authMiddleware, upload.fields([
     { name: "verification_video", maxCount: 1 },
     { name: "cni_front", maxCount: 1 },
@@ -79,7 +110,22 @@ router.post("/upload-verification", authMiddleware, upload.fields([
     }
 });
 
-// 📌 2️⃣ Récupération du Statut de Vérification
+/**
+ * @swagger
+ * /api/verifications/status:
+ *   get:
+ *     summary: Récupérer le statut de vérification
+ *     tags: [Vérifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statut de vérification récupéré
+ *       404:
+ *         description: Aucune vérification trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/status", authMiddleware, async (req, res) => {
     try {
         await ensureVerificationTableExists();
@@ -100,7 +146,43 @@ router.get("/status", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 3️⃣ Mise à Jour du Statut (Admin uniquement)
+/**
+ * @swagger
+ * /api/verifications/update/{user_id}:
+ *   put:
+ *     summary: Mettre à jour le statut de vérification (Admin uniquement)
+ *     tags: [Vérifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, approved, rejected]
+ *     responses:
+ *       200:
+ *         description: Statut mis à jour
+ *       400:
+ *         description: Statut invalide
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Aucune vérification trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/update/:user_id", authMiddleware, async (req, res) => {
     try {
         await ensureVerificationTableExists();
@@ -131,7 +213,31 @@ router.put("/update/:user_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 4️⃣ Suppression d'une Vérification (Admin uniquement)
+/**
+ * @swagger
+ * /api/verifications/delete/{user_id}:
+ *   delete:
+ *     summary: Supprimer une vérification (Admin uniquement)
+ *     tags: [Vérifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur
+ *     responses:
+ *       200:
+ *         description: Vérification supprimée
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Aucune vérification trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.delete("/delete/:user_id", authMiddleware, async (req, res) => {
     try {
         await ensureVerificationTableExists();

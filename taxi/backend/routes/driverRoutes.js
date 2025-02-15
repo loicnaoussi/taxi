@@ -3,7 +3,44 @@ const router = express.Router();
 const db = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// 📌 Modifier un véhicule (changer couleur, immatriculation, etc.)
+/**
+ * @swagger
+ * /api/driver/edit-vehicle/{vehicle_id}:
+ *   put:
+ *     summary: Modifier les informations d'un véhicule
+ *     tags: [Driver]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: vehicle_id
+ *         required: true
+ *         description: ID du véhicule à modifier
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               color:
+ *                 type: string
+ *               license_plate:
+ *                 type: string
+ *               brand:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Véhicule mis à jour avec succès
+ *       403:
+ *         description: Seuls les chauffeurs peuvent modifier un véhicule
+ *       404:
+ *         description: Véhicule non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/edit-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {
@@ -50,7 +87,31 @@ router.put("/edit-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Désactiver temporairement un véhicule (sans suppression définitive)
+/**
+ * @swagger
+ * /api/driver/deactivate-vehicle/{vehicle_id}:
+ *   put:
+ *     summary: Désactiver temporairement un véhicule
+ *     tags: [Driver]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: vehicle_id
+ *         required: true
+ *         description: ID du véhicule à désactiver
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Véhicule désactivé avec succès
+ *       403:
+ *         description: Seuls les chauffeurs peuvent désactiver un véhicule
+ *       404:
+ *         description: Véhicule non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/deactivate-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {
@@ -78,7 +139,43 @@ router.put("/deactivate-vehicle/:vehicle_id", authMiddleware, async (req, res) =
     }
 });
 
-// 📌 Supprimer un véhicule avec confirmation
+/**
+ * @swagger
+ * /api/driver/delete-vehicle/{vehicle_id}:
+ *   delete:
+ *     summary: Supprimer définitivement un véhicule
+ *     tags: [Driver]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: vehicle_id
+ *         required: true
+ *         description: ID du véhicule à supprimer
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               confirm:
+ *                 type: boolean
+ *                 description: Confirmez la suppression
+ *     responses:
+ *       200:
+ *         description: Véhicule supprimé avec succès
+ *       400:
+ *         description: Confirmation requise pour supprimer
+ *       403:
+ *         description: Seuls les chauffeurs peuvent supprimer un véhicule
+ *       404:
+ *         description: Véhicule non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.delete("/delete-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {
@@ -86,7 +183,7 @@ router.delete("/delete-vehicle/:vehicle_id", authMiddleware, async (req, res) =>
         }
 
         const { vehicle_id } = req.params;
-        const { confirm } = req.body; // ⚠️ Le chauffeur doit envoyer `{ "confirm": true }` pour valider la suppression
+        const { confirm } = req.body;
 
         if (!confirm) {
             return res.status(400).json({ message: "Confirmation requise pour supprimer le véhicule." });
@@ -116,7 +213,29 @@ router.delete("/delete-vehicle/:vehicle_id", authMiddleware, async (req, res) =>
     }
 });
 
-// 📌 Voir la liste des véhicules d'un chauffeur (Admin)
+/**
+ * @swagger
+ * /api/driver/driver-vehicles/{driver_id}:
+ *   get:
+ *     summary: Voir la liste des véhicules d'un chauffeur
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: driver_id
+ *         required: true
+ *         description: ID du chauffeur
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Liste des véhicules récupérée
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/driver-vehicles/:driver_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {

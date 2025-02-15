@@ -3,7 +3,62 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📌 1. Récupérer les informations utilisateur dans une route protégée
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/protected/profile:
+ *   get:
+ *     summary: Récupérer les informations de profil de l'utilisateur connecté
+ *     tags: [Routes Protégées]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Informations de l'utilisateur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Accès autorisé à l'espace protégé.
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     user_id:
+ *                       type: integer
+ *                     username:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     phone_number:
+ *                       type: string
+ *                     full_name:
+ *                       type: string
+ *                     user_type:
+ *                       type: string
+ *                       enum: [admin, passenger, driver]
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/profile", authMiddleware, async (req, res) => {
     try {
         // Récupérer les informations de l'utilisateur sans les champs sensibles
@@ -26,7 +81,29 @@ router.get("/profile", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 2. Route test pour vérifier l'accès à une route protégée
+/**
+ * @swagger
+ * /api/protected:
+ *   get:
+ *     summary: Vérifier l'accès à une route protégée
+ *     tags: [Routes Protégées]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Accès réussi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Bienvenue dans la route protégée !
+ */
 router.get("/", authMiddleware, (req, res) => {
     res.json({ status: "success", message: "Bienvenue dans la route protégée !" });
 });

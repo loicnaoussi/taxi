@@ -3,7 +3,43 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📊 Récupérer les statistiques du tableau de bord
+/**
+ * @swagger
+ * /api/admin/dashboard:
+ *   get:
+ *     summary: Récupérer les statistiques du tableau de bord
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Retourne les statistiques clés pour l'administration, uniquement accessible aux admins.
+ *     responses:
+ *       200:
+ *         description: Statistiques récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalUsers:
+ *                   type: integer
+ *                   description: Nombre total d'utilisateurs
+ *                 totalRides:
+ *                   type: integer
+ *                   description: Nombre total de trajets
+ *                 completedRides:
+ *                   type: integer
+ *                   description: Nombre total de trajets complétés
+ *                 pendingPayments:
+ *                   type: integer
+ *                   description: Nombre total de paiements en attente
+ *                 totalEarnings:
+ *                   type: number
+ *                   description: Total des revenus des paiements complétés
+ *       403:
+ *         description: Accès refusé. Admin uniquement.
+ *       500:
+ *         description: Erreur interne du serveur
+ */
 router.get("/dashboard", authMiddleware, async (req, res) => {
     try {
         // Vérification si l'utilisateur est admin

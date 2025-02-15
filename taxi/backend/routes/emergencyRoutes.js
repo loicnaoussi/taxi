@@ -3,7 +3,38 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📌 1. Ajouter un contact d'urgence (Max : 3 contacts)
+/**
+ * @swagger
+ * /api/emergency/add:
+ *   post:
+ *     summary: "Ajouter un contact d'urgence (Max : 3 contacts)"
+ *     tags:
+ *       - Emergency Contacts
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               contact_name:
+ *                 type: string
+ *                 description: Nom du contact
+ *                 example: "Jean Dupont"
+ *               contact_phone:
+ *                 type: string
+ *                 description: Numéro de téléphone
+ *                 example: "+33612345678"
+ *     responses:
+ *       201:
+ *         description: Contact ajouté avec succès
+ *       400:
+ *         description: Limite de contacts atteinte ou doublon
+ *       500:
+ *         description: Erreur interne du serveur
+ */
 router.post("/add", authMiddleware, async (req, res) => {
 	try {
 		const { contact_name, contact_phone } = req.body;
@@ -60,7 +91,20 @@ router.post("/add", authMiddleware, async (req, res) => {
 	}
 });
 
-// 📌 Récupérer les contacts d’un utilisateur
+/**
+ * @swagger
+ * /api/emergency/my-contacts:
+ *   get:
+ *     summary: Récupérer les contacts d’un utilisateur
+ *     tags: [Emergency]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des contacts
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-contacts", authMiddleware, async (req, res) => {
     try {
         const [contacts] = await db.query(
@@ -76,8 +120,29 @@ router.get("/my-contacts", authMiddleware, async (req, res) => {
     }
 });
 
-
-// 📌 3. Supprimer un contact d'urgence (Vérification requise)
+/**
+ * @swagger
+ * /api/emergency/delete/{contact_id}:
+ *   delete:
+ *     summary: Supprimer un contact d'urgence
+ *     tags: [Emergency]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: contact_id
+ *         required: true
+ *         description: ID du contact à supprimer
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Contact supprimé avec succès
+ *       404:
+ *         description: Contact non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.delete("/delete/:contact_id", authMiddleware, async (req, res) => {
 	try {
 		const { contact_id } = req.params;
@@ -107,7 +172,29 @@ router.delete("/delete/:contact_id", authMiddleware, async (req, res) => {
 	}
 });
 
-// 📌 4. Permettre aux administrateurs de voir les contacts d'urgence d'un utilisateur
+/**
+ * @swagger
+ * /api/emergency/user/{user_id}:
+ *   get:
+ *     summary: Voir les contacts d'urgence d'un utilisateur (Admin uniquement)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         description: ID de l'utilisateur
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Liste des contacts récupérée
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/user/:user_id", authMiddleware, async (req, res) => {
 	try {
 		if (req.user.user_type !== "admin") {

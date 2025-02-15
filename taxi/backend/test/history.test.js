@@ -23,8 +23,8 @@ beforeAll(async () => {
         username: "admin",
         email: "admin@example.com",
         password: "admin123",
-        phone_number: "0611111111",  // ✅ Ajout du numéro de téléphone requis
-        full_name: "Admin Test",  // ✅ Ajout du nom complet requis
+        phone_number: "0611111111",  
+        full_name: "Admin Test",  
         user_type: "admin"
     });
 
@@ -49,7 +49,7 @@ describe("📊 Historique et statistiques", () => {
             .set("Authorization", `Bearer ${userToken}`);
 
         console.log("🔹 Réponse historique :", res.body);
-        expect([200, 404]).toContain(res.statusCode);  // ✅ Correction Jest
+        expect([200, 404]).toContain(res.statusCode); 
         if (res.statusCode === 200) {
             expect(Array.isArray(res.body)).toBe(true);
         }
@@ -61,7 +61,7 @@ describe("📊 Historique et statistiques", () => {
             .set("Authorization", `Bearer ${adminToken}`);
 
         console.log("🔹 Réponse statistiques admin :", res.body);
-        expect([200, 404]).toContain(res.statusCode);  // ✅ Correction Jest
+        expect([200, 404]).toContain(res.statusCode);  
         if (res.statusCode === 200) {
             expect(res.body).toHaveProperty("total_users");
             expect(res.body).toHaveProperty("total_rides");

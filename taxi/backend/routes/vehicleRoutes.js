@@ -22,7 +22,73 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 📌 Ajouter un véhicule (chauffeur uniquement)
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Vehicle:
+ *       type: object
+ *       properties:
+ *         vehicle_id:
+ *           type: integer
+ *         marque:
+ *           type: string
+ *         model:
+ *           type: string
+ *         year:
+ *           type: integer
+ *         license_plate:
+ *           type: string
+ *         couleur:
+ *           type: string
+ *         immatriculation:
+ *           type: string
+ *         carte_grise:
+ *           type: string
+ *         driver_id:
+ *           type: integer
+ */
+
+/**
+ * @swagger
+ * /api/vehicles/add:
+ *   post:
+ *     summary: Ajouter un véhicule (chauffeur uniquement)
+ *     tags: [Véhicules]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               marque:
+ *                 type: string
+ *               model:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *               license_plate:
+ *                 type: string
+ *               couleur:
+ *                 type: string
+ *               immatriculation:
+ *                 type: string
+ *               carte_grise:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Véhicule ajouté avec succès
+ *       400:
+ *         description: Erreur de validation
+ *       403:
+ *         description: Accès refusé (chauffeurs uniquement)
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/add", authMiddleware, upload.single("carte_grise"), async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {
@@ -53,7 +119,30 @@ router.post("/add", authMiddleware, upload.single("carte_grise"), async (req, re
     }
 });
 
-// 📌 Lister les véhicules d'un chauffeur
+/**
+ * @swagger
+ * /api/vehicles/my-vehicles:
+ *   get:
+ *     summary: Lister les véhicules d'un chauffeur
+ *     tags: [Véhicules]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des véhicules
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Vehicle'
+ *       403:
+ *         description: Accès refusé (chauffeurs uniquement)
+ *       404:
+ *         description: Aucun véhicule trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-vehicles", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {
@@ -73,7 +162,49 @@ router.get("/my-vehicles", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Modifier un véhicule (chauffeur uniquement)
+/**
+ * @swagger
+ * /api/vehicles/edit-vehicle/{vehicle_id}:
+ *   put:
+ *     summary: Modifier un véhicule (chauffeur uniquement)
+ *     tags: [Véhicules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: vehicle_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               marque:
+ *                 type: string
+ *               model:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *               license_plate:
+ *                 type: string
+ *               couleur:
+ *                 type: string
+ *               immatriculation:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Véhicule mis à jour avec succès
+ *       403:
+ *         description: Accès refusé (chauffeurs uniquement)
+ *       404:
+ *         description: Véhicule non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/edit-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {
@@ -105,7 +236,30 @@ router.put("/edit-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Supprimer un véhicule (chauffeur uniquement)
+/**
+ * @swagger
+ * /api/vehicles/delete-vehicle/{vehicle_id}:
+ *   delete:
+ *     summary: Supprimer un véhicule (chauffeur uniquement)
+ *     tags: [Véhicules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: vehicle_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Véhicule supprimé avec succès
+ *       403:
+ *         description: Accès refusé (chauffeurs uniquement)
+ *       404:
+ *         description: Véhicule non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.delete("/delete-vehicle/:vehicle_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "driver") {

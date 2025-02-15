@@ -7,7 +7,42 @@ const authMiddleware = require("../middleware/authMiddleware");
 const { check, validationResult } = require("express-validator");
 require("dotenv").config();
 
-// 🔹 Inscription utilisateur
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Inscription d'un nouvel utilisateur
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone_number:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 format: password
+ *               full_name:
+ *                 type: string
+ *               user_type:
+ *                 type: string
+ *                 enum: [passenger, driver, admin]
+ *     responses:
+ *       201:
+ *         description: Utilisateur inscrit avec succès
+ *       400:
+ *         description: Requête invalide ou utilisateur existant
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post(
     "/register",
     [
@@ -48,7 +83,33 @@ router.post(
     }
 );
 
-// 🔹 Connexion utilisateur
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Connexion utilisateur
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               identifier:
+ *                 type: string
+ *                 description: Email ou numéro de téléphone
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Connexion réussie, retourne le token
+ *       401:
+ *         description: Identifiants incorrects
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/login", async (req, res) => {
     try {
         const { identifier, password } = req.body;
@@ -78,7 +139,33 @@ router.post("/login", async (req, res) => {
     }
 });
 
-// 🔹 Modifier les informations du compte
+/**
+ * @swagger
+ * /api/auth/update:
+ *   put:
+ *     summary: Modifier les informations du compte
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               full_name:
+ *                 type: string
+ *               phone_number:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour avec succès
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/update", authMiddleware, async (req, res) => {
     try {
         const { username, full_name, phone_number } = req.body;
@@ -94,7 +181,20 @@ router.put("/update", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 Supprimer (désactiver) le compte utilisateur
+/**
+ * @swagger
+ * /api/auth/delete:
+ *   delete:
+ *     summary: Supprimer (désactiver) le compte utilisateur
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Compte désactivé avec succès
+ *       500:
+ *         description: Erreur serveur
+ */
 router.delete("/delete", authMiddleware, async (req, res) => {
     try {
         await db.query("UPDATE users SET is_deleted = 1 WHERE user_id = ?", [req.user.user_id]);

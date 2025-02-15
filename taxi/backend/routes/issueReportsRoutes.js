@@ -3,7 +3,45 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📌 1. Signaler un problème sur un trajet
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/reports/report:
+ *   post:
+ *     summary: Signaler un problème sur un trajet
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ride_id:
+ *                 type: integer
+ *               issue_type:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Réclamation envoyée avec succès
+ *       400:
+ *         description: Tous les champs sont requis ou données invalides
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/report", authMiddleware, async (req, res) => {
     try {
         const { ride_id, issue_type, description } = req.body;
@@ -29,7 +67,20 @@ router.post("/report", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 2. Voir les réclamations envoyées par un utilisateur (Sécurisé)
+/**
+ * @swagger
+ * /api/reports/my-reports:
+ *   get:
+ *     summary: Voir les réclamations envoyées par un utilisateur
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des réclamations
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-reports", authMiddleware, async (req, res) => {
     try {
         const [reports] = await db.query(
@@ -43,7 +94,22 @@ router.get("/my-reports", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 3. Voir toutes les réclamations (Admin uniquement)
+/**
+ * @swagger
+ * /api/reports/admin/reports:
+ *   get:
+ *     summary: Voir toutes les réclamations (Admin uniquement)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste de toutes les réclamations
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/admin/reports", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
@@ -60,7 +126,29 @@ router.get("/admin/reports", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 4. Voir les réclamations d'un utilisateur spécifique (Admin uniquement)
+/**
+ * @swagger
+ * /api/reports/admin/reports/user/{user_id}:
+ *   get:
+ *     summary: Voir les réclamations d'un utilisateur spécifique (Admin uniquement)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur
+ *     responses:
+ *       200:
+ *         description: Liste des réclamations de l'utilisateur
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/admin/reports/user/:user_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
@@ -79,7 +167,43 @@ router.get("/admin/reports/user/:user_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 5. Mettre à jour le statut d'un signalement (Admin uniquement)
+/**
+ * @swagger
+ * /api/reports/admin/update/{report_id}:
+ *   put:
+ *     summary: Mettre à jour le statut d'un signalement (Admin uniquement)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: report_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du signalement
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, reviewed, resolved]
+ *     responses:
+ *       200:
+ *         description: Statut de la réclamation mis à jour
+ *       400:
+ *         description: Statut invalide
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       404:
+ *         description: Réclamation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/admin/update/:report_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {

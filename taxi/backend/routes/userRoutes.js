@@ -31,7 +31,52 @@ const upload = multer({
     },
 });
 
-// 🔹 1. Récupérer les informations du profil
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         user_id:
+ *           type: integer
+ *         username:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         full_name:
+ *           type: string
+ *         phone_number:
+ *           type: string
+ *         profile_image_url:
+ *           type: string
+ *           format: uri
+ *         user_type:
+ *           type: string
+ *           enum: [passenger, driver, admin]
+ */
+
+/**
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: Récupérer les informations du profil
+ *     tags: [Utilisateurs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Informations de l'utilisateur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/profile", authMiddleware, async (req, res) => {
     try {
         const [user] = await db.query(
@@ -49,7 +94,35 @@ router.get("/profile", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 2. Mettre à jour les informations utilisateur (Vérification de l'unicité du numéro)
+/**
+ * @swagger
+ * /api/users/update:
+ *   put:
+ *     summary: Mettre à jour les informations utilisateur
+ *     tags: [Utilisateurs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               full_name:
+ *                 type: string
+ *               phone_number:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour avec succès
+ *       400:
+ *         description: Erreur de validation
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/update", authMiddleware, async (req, res) => {
     try {
         const { username, full_name, phone_number } = req.body;
@@ -80,7 +153,31 @@ router.put("/update", authMiddleware, async (req, res) => {
     }
 });
 
-// 🔹 3. Mettre à jour la photo de profil (Avec suppression de l'ancienne)
+/**
+ * @swagger
+ * /api/users/upload-photo:
+ *   post:
+ *     summary: Mettre à jour la photo de profil
+ *     tags: [Utilisateurs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profile_image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Photo de profil mise à jour avec succès
+ *       400:
+ *         description: Aucune image envoyée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/upload-photo", authMiddleware, upload.single("profile_image"), async (req, res) => {
     try {
         if (!req.file) {

@@ -6,7 +6,50 @@ const db = require("../config/db");
 // 📌 Modes de paiement valides
 const validPaymentMethods = ["cash", "credit_card", "mobile_payment"];
 
-// 📌 1️⃣ Route - Effectuer un paiement
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/payments/pay:
+ *   post:
+ *     summary: Effectuer un paiement
+ *     tags: [Paiements]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ride_id:
+ *                 type: integer
+ *                 description: ID du trajet
+ *               amount:
+ *                 type: number
+ *                 format: float
+ *                 description: Montant du paiement
+ *               payment_method:
+ *                 type: string
+ *                 enum: [cash, credit_card, mobile_payment]
+ *                 description: Mode de paiement
+ *     responses:
+ *       200:
+ *         description: Paiement effectué avec succès
+ *       400:
+ *         description: Erreur de validation
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/pay", authMiddleware, async (req, res) => {
     try {
         const { ride_id, amount, payment_method } = req.body;
@@ -39,7 +82,29 @@ router.post("/pay", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 2️⃣ Route - Récupérer un paiement spécifique
+/**
+ * @swagger
+ * /api/payments/{payment_id}:
+ *   get:
+ *     summary: Récupérer les détails d'un paiement
+ *     tags: [Paiements]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payment_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du paiement
+ *     responses:
+ *       200:
+ *         description: Détails du paiement
+ *       404:
+ *         description: Paiement non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/:payment_id", authMiddleware, async (req, res) => {
     try {
         const { payment_id } = req.params;
@@ -57,7 +122,22 @@ router.get("/:payment_id", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 3️⃣ Route - Historique des paiements
+/**
+ * @swagger
+ * /api/payments/history:
+ *   get:
+ *     summary: Récupérer l'historique des paiements de l'utilisateur
+ *     tags: [Paiements]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Historique des paiements
+ *       404:
+ *         description: Aucun paiement trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/history", authMiddleware, async (req, res) => {
     try {
         const [payments] = await db.query(
@@ -75,7 +155,42 @@ router.get("/history", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 4️⃣ Route - Mettre à jour le statut d’un paiement
+/**
+ * @swagger
+ * /api/payments/{payment_id}/update-status:
+ *   put:
+ *     summary: Mettre à jour le statut d'un paiement
+ *     tags: [Paiements]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payment_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du paiement
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               payment_status:
+ *                 type: string
+ *                 enum: [pending, completed, failed]
+ *                 description: Statut de paiement
+ *     responses:
+ *       200:
+ *         description: Statut du paiement mis à jour avec succès
+ *       400:
+ *         description: Statut invalide
+ *       404:
+ *         description: Paiement non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/:payment_id/update-status", authMiddleware, async (req, res) => {
     try {
         const { payment_id } = req.params;

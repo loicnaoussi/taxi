@@ -3,7 +3,49 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const db = require("../config/db");
 
-// 📌 Signaler un problème sur un trajet
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/reports/report:
+ *   post:
+ *     summary: Signaler un problème sur un trajet
+ *     tags: [Réclamations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ride_id:
+ *                 type: integer
+ *               issue_type:
+ *                 type: string
+ *                 example: "Retard"
+ *               description:
+ *                 type: string
+ *                 example: "Le chauffeur est arrivé en retard."
+ *     responses:
+ *       201:
+ *         description: Réclamation envoyée avec succès
+ *       400:
+ *         description: Tous les champs sont requis
+ *       404:
+ *         description: Trajet introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post("/report", authMiddleware, async (req, res) => {
     try {
         const { ride_id, issue_type, description } = req.body;
@@ -36,7 +78,22 @@ router.post("/report", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Voir les réclamations envoyées par un utilisateur
+/**
+ * @swagger
+ * /api/reports/my-reports:
+ *   get:
+ *     summary: Voir les réclamations de l'utilisateur
+ *     tags: [Réclamations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des réclamations
+ *       404:
+ *         description: Aucune réclamation trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/my-reports", authMiddleware, async (req, res) => {
     try {
         const [reports] = await db.query("SELECT * FROM issue_reports WHERE user_id = ?", [req.user.user_id]);
@@ -52,7 +109,24 @@ router.get("/my-reports", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Voir toutes les réclamations (Admin uniquement)
+/**
+ * @swagger
+ * /api/reports/all-reports:
+ *   get:
+ *     summary: Voir toutes les réclamations (Admin uniquement)
+ *     tags: [Réclamations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste complète des réclamations
+ *       403:
+ *         description: Accès refusé (non admin)
+ *       404:
+ *         description: Aucune réclamation trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get("/all-reports", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
@@ -72,7 +146,44 @@ router.get("/all-reports", authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Mettre à jour le statut d'une réclamation (Admin uniquement)
+/**
+ * @swagger
+ * /api/reports/admin/update/{report_id}:
+ *   put:
+ *     summary: Mettre à jour le statut d'une réclamation (Admin uniquement)
+ *     tags: [Réclamations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: report_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la réclamation
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, reviewed, resolved]
+ *                 example: "resolved"
+ *     responses:
+ *       200:
+ *         description: Réclamation mise à jour avec succès
+ *       400:
+ *         description: Statut invalide
+ *       403:
+ *         description: Accès refusé (non admin)
+ *       404:
+ *         description: Réclamation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put("/admin/update/:report_id", authMiddleware, async (req, res) => {
     try {
         if (req.user.user_type !== "admin") {
@@ -100,15 +211,41 @@ router.put("/admin/update/:report_id", authMiddleware, async (req, res) => {
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 });
-// 🔹 Endpoint : Suppression d'un signalement (Admin uniquement)
-router.delete("/admin/delete/:report_id", authMiddleware, async (req, res) => {
-    const { report_id } = req.params;
 
+/**
+ * @swagger
+ * /api/reports/admin/delete/{report_id}:
+ *   delete:
+ *     summary: Supprimer une réclamation (Admin uniquement)
+ *     tags: [Réclamations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: report_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la réclamation
+ *     responses:
+ *       200:
+ *         description: Réclamation supprimée avec succès
+ *       403:
+ *         description: Accès refusé (non admin)
+ *       404:
+ *         description: Réclamation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.delete("/admin/delete/:report_id", authMiddleware, async (req, res) => {
     try {
-        const [result] = await db.query(
-            "DELETE FROM issue_reports WHERE report_id = ?",
-            [report_id]
-        );
+        if (req.user.user_type !== "admin") {
+            return res.status(403).json({ message: "Accès refusé. Réservé aux administrateurs." });
+        }
+
+        const { report_id } = req.params;
+
+        const [result] = await db.query("DELETE FROM issue_reports WHERE report_id = ?", [report_id]);
 
         if (result.affectedRows === 0) {
             // ✅ Modification ici : Renvoyer 200 avec un message clair
