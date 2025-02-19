@@ -25,11 +25,15 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 }, // 🔹 Limite à 5MB
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith("image/")) {
-            return cb(new Error("Seuls les fichiers images sont autorisés !"), false);
+            req.fileValidationError = "Seuls les fichiers images sont autorisés !";
+            return cb(null, false); // ⚠️ Ne pas générer une exception, mais signaler l'erreur
         }
         cb(null, true);
     },
 });
+
+
+
 
 /**
  * @swagger
@@ -93,6 +97,7 @@ router.get("/profile", authMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 /**
  * @swagger
@@ -180,9 +185,14 @@ router.put("/update", authMiddleware, async (req, res) => {
  */
 router.post("/upload-photo", authMiddleware, upload.single("profile_image"), async (req, res) => {
     try {
+        if (req.fileValidationError) {
+            return res.status(400).json({ message: req.fileValidationError }); // ✅ Retourner un 400 proprement
+        }
+        
         if (!req.file) {
             return res.status(400).json({ message: "Aucune image envoyée." });
         }
+
 
         // Récupérer l'ancienne image
         const [user] = await db.query("SELECT profile_image_url FROM users WHERE user_id = ?", [req.user.user_id]);

@@ -15,6 +15,15 @@ const morgan = require("morgan");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
+const fs = require("fs");
+
+// 📌 Vérifier et créer le dossier `uploads/` s'il n'existe pas
+const uploadDir = "uploads/";
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log("📂 Dossier `uploads/` créé !");
+}
+
 
 // ✅ Exporter `io` immédiatement pour éviter les erreurs de dépendance circulaire
 module.exports = { app, server, io };
@@ -50,11 +59,10 @@ const notificationRoutes = require("./routes/notificationRoutes")(io); // ✅ io
 const emergencyRoutes = require("./routes/emergencyRoutes");
 const historyRoutes = require("./routes/historyRoutes");
 const reportRoutes = require("./routes/reportRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
 const qrCodeRoutes = require("./routes/qrCodeRoutes");
-const userRoutes = require("./routes/userRoutes");
-const userLocationRoutes = require("./routes/userLocationRoutes")(io); // ✅ io passé
+const userRoutes = require("./routes/userRoutes"); 
 const adminDashboardRoutes = require("./routes/adminDashboardRoutes");
+const protectedRoutes = require("./routes/protectedRoutes");
 
 // ✅ Association des Routes
 app.use("/api/auth", authRoutes);
@@ -67,11 +75,10 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/reports", reportRoutes);
-app.use("/api/settings", settingsRoutes);
 app.use("/api/qrcodes", qrCodeRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/location", userLocationRoutes);
 app.use("/api/admin", adminDashboardRoutes);
+app.use("/api/protected", protectedRoutes);
 
 // 📡 Gestion des WebSockets
 let connectedUsers = {};
@@ -139,9 +146,18 @@ const sendNotification = async (userId, title, message) => {
 
 // ✅ Middleware Global de Gestion des Erreurs
 app.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        console.warn("🚫 Erreur `multer` détectée :", err.message);
+        return res.status(400).json({ message: err.message });
+    }
+    if (err.message === "Seuls les fichiers images sont autorisés !") {
+        console.warn("🚫 Erreur validation fichier :", err.message);
+        return res.status(400).json({ message: err.message });
+    }
     console.error("🔥 Erreur Serveur :", err.stack);
     res.status(500).json({ message: "Erreur interne du serveur." });
 });
+
 
 // ✅ Route de Test
 app.get("/", (req, res) => {

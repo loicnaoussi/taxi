@@ -2,79 +2,156 @@ const request = require("supertest");
 const { app, server } = require("../server");
 const db = require("../config/db");
 
-let userToken, adminToken;
+let passengerToken, driverToken, adminToken;
+let passengerId, driverId, adminId;
+let testRideId;
 
 beforeAll(async () => {
-    console.log("🔹 Connexion de l'utilisateur...");
-    const userRes = await request(app).post("/api/auth/login").send({
-        identifier: "testuser@example.com",
-        password: "password123"
-    });
+    console.log("🔹 Suppression des anciens utilisateurs et trajets de test...");
 
-    console.log("🔹 Réponse connexion utilisateur :", userRes.body);
-    expect(userRes.statusCode).toBe(200);
-    userToken = userRes.body.accessToken;
+    await db.query("DELETE FROM rides WHERE passenger_id IN (SELECT user_id FROM users WHERE email LIKE 'testuser%')");
+    await db.query("DELETE FROM history WHERE user_id IN (SELECT user_id FROM users WHERE email LIKE 'testuser%')");
+    await db.query("DELETE FROM users WHERE email LIKE 'testuser%'");
 
-    console.log("🔹 Suppression du compte admin s'il existe déjà...");
-    await db.query("DELETE FROM users WHERE email = ?", ["admin@example.com"]);
+    console.log("✅ Suppression terminée !");
 
-    console.log("🔹 Création d'un compte admin...");
-    const createAdminRes = await request(app).post("/api/auth/register").send({
-        username: "admin",
-        email: "admin@example.com",
-        password: "admin123",
-        phone_number: "0611111111",  
-        full_name: "Admin Test",  
-        user_type: "admin"
-    });
+    async function createAndLoginUser(email, username, userType) {
+        await request(app).post("/api/auth/register").send({
+            username,
+            email,
+            password: "password123",
+            phone_number: `06${Math.floor(10000000 + Math.random() * 90000000)}`,
+            full_name: `${username} Test`,
+            user_type: userType
+        });
 
-    console.log("🔹 Réponse création admin :", createAdminRes.body);
-    expect(createAdminRes.statusCode).toBe(201);
+        const res = await request(app).post("/api/auth/login").send({
+            identifier: email,
+            password: "password123"
+        });
 
-    console.log("🔹 Connexion de l'admin...");
-    const adminRes = await request(app).post("/api/auth/login").send({
-        identifier: "admin@example.com",
-        password: "admin123"
-    });
+        expect(res.statusCode).toBe(200);
+        return { token: res.body.accessToken, userId: res.body.user.user_id };
+    }
 
-    console.log("🔹 Réponse connexion admin :", adminRes.body);
-    expect(adminRes.statusCode).toBe(200);
-    adminToken = adminRes.body.accessToken;
+    const passenger = await createAndLoginUser("passenger_test@example.com", "passenger_test", "passenger");
+    const driver = await createAndLoginUser("driver_test@example.com", "driver_test", "driver");
+    const admin = await createAndLoginUser("admin_test@example.com", "admin_test", "admin");
+
+    passengerToken = passenger.token;
+    driverToken = driver.token;
+    adminToken = admin.token;
+    passengerId = passenger.userId;
+    driverId = driver.userId;
+    adminId = admin.userId;
+
+    console.log(`✅ Utilisateur Passager: ${passengerId}, Chauffeur: ${driverId}, Admin: ${adminId}`);
+
+    // ✅ Création d'un trajet de test
+    const [rideRes] = await db.query(
+        "INSERT INTO rides (passenger_id, driver_id, pickup_location, dropoff_location, status) VALUES (?, ?, ?, ?, ?)",
+        [passengerId, driverId, "Point A", "Point B", "completed"]
+    );
+
+    testRideId = rideRes.insertId || null;
+
+    if (!testRideId) {
+        throw new Error("❌ Échec de l'insertion du trajet !");
+    }
+
+    console.log(`✅ Trajet de test créé avec ride_id: ${testRideId}`);
 });
 
-describe("📊 Historique et statistiques", () => {
-    test("✅ Récupération de l'historique des actions", async () => {
-        const res = await request(app)
-            .get("/api/history/my-history")
-            .set("Authorization", `Bearer ${userToken}`);
 
-        console.log("🔹 Réponse historique :", res.body);
-        expect([200, 404]).toContain(res.statusCode); 
-        if (res.statusCode === 200) {
-            expect(Array.isArray(res.body)).toBe(true);
-        }
+
+describe("📜 Tests des routes d'historique", () => {
+
+    test("✅ Voir l'historique des trajets (passager ou chauffeur)", async () => {
+        const res = await request(app)
+            .get("/api/history/my-rides")
+            .set("Authorization", `Bearer ${passengerToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("total");
+        expect(Array.isArray(res.body.rides)).toBe(true);
     });
 
-    test("✅ Récupération des statistiques (Admin)", async () => {
+    test("✅ Voir un trajet spécifique", async () => {
+        console.log(`🔍 Test de récupération du trajet avec ride_id: ${testRideId}`);
+    
+        expect(testRideId).toBeDefined(); // ✅ Vérifie que testRideId est bien défini
+    
+        if (!testRideId) {
+            console.log("❌ testRideId est undefined, impossible de poursuivre le test.");
+            return;
+        }
+    
         const res = await request(app)
-            .get("/api/settings/stats")
+            .get(`/api/history/ride/${testRideId}`)
+            .set("Authorization", `Bearer ${passengerToken}`);
+    
+        console.log(`🔹 Réponse du test trajet spécifique:`, res.body);
+    
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("ride_id", testRideId);
+    });
+    
+    
+
+    test("🚫 Accès refusé à un trajet inexistant", async () => {
+        const res = await request(app)
+            .get("/api/history/ride/999999")
+            .set("Authorization", `Bearer ${passengerToken}`);
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toHaveProperty("message", "Trajet non trouvé ou non accessible.");
+    });
+
+    test("✅ Voir l'historique des actions d'un utilisateur", async () => {
+        const res = await request(app)
+            .get("/api/history/actions/my-history")
+            .set("Authorization", `Bearer ${passengerToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("total");
+    });
+
+    test("✅ Voir tout l'historique des actions (Admin uniquement)", async () => {
+        const res = await request(app)
+            .get("/api/history/actions/admin/history")
             .set("Authorization", `Bearer ${adminToken}`);
 
-        console.log("🔹 Réponse statistiques admin :", res.body);
-        expect([200, 404]).toContain(res.statusCode);  
-        if (res.statusCode === 200) {
-            expect(res.body).toHaveProperty("total_users");
-            expect(res.body).toHaveProperty("total_rides");
-            expect(res.body).toHaveProperty("total_payments");
-        }
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("total");
+    });
+
+    test("🚫 Accès refusé à l'historique des actions d'un autre utilisateur (non admin)", async () => {
+        const res = await request(app)
+            .get("/api/history/actions/admin/user/1")
+            .set("Authorization", `Bearer ${passengerToken}`);
+
+        expect(res.statusCode).toBe(403);
+        expect(res.body).toHaveProperty("message", "Accès réservé aux administrateurs.");
+    });
+
+    test("✅ Voir l'historique des actions d'un utilisateur spécifique (Admin)", async () => {
+        const res = await request(app)
+            .get(`/api/history/actions/admin/user/${passengerId}`)
+            .set("Authorization", `Bearer ${adminToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("total");
     });
 });
 
 afterAll(async () => {
-    console.log("🔹 Suppression du compte admin après les tests...");
-    await db.query("DELETE FROM users WHERE email = ?", ["admin@example.com"]);
+    console.log("🧹 Nettoyage et fermeture...");
 
-    console.log("🔹 Fermeture du serveur...");
+    await db.query("DELETE FROM rides WHERE ride_id = ?", [testRideId]);
+    await db.query("DELETE FROM users WHERE email LIKE 'testuser%'");
+    await db.query("DELETE FROM history WHERE user_id IN (SELECT user_id FROM users WHERE email LIKE 'testuser%')");
+
+    await db.end();
     server.close();
-    console.log("✅ Serveur fermé !");
+    console.log("✅ Tests terminés et serveur arrêté !");
 });

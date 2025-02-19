@@ -285,4 +285,46 @@ router.delete("/delete-vehicle/:vehicle_id", authMiddleware, async (req, res) =>
     }
 });
 
+/**
+ * @swagger
+ * /api/driver/driver-vehicles/{driver_id}:
+ *   get:
+ *     summary: Voir la liste des véhicules d'un chauffeur
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: driver_id
+ *         required: true
+ *         description: ID du chauffeur
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Liste des véhicules récupérée
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get("/driver-vehicles/:driver_id", authMiddleware, async (req, res) => {
+    try {
+        if (req.user.user_type !== "admin") {
+            return res.status(403).json({ message: "Accès réservé aux administrateurs." });
+        }
+
+        const { driver_id } = req.params;
+
+        const [vehicles] = await db.query(
+            "SELECT * FROM vehicles WHERE driver_id = ?",
+            [driver_id]
+        );
+
+        res.json({ vehicles });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

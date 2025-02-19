@@ -59,6 +59,7 @@ const db = require("../config/db");
  *       500:
  *         description: Erreur serveur
  */
+
 router.get("/profile", authMiddleware, async (req, res) => {
     try {
         // Récupérer les informations de l'utilisateur sans les champs sensibles

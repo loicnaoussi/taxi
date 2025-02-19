@@ -2,15 +2,23 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const authMiddleware = (req, res, next) => {
-    const token = req.header("Authorization");
-    if (!token) return res.status(401).json({ message: "Accès refusé. Aucun token fourni." });
-
     try {
-        const verified = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            console.warn("🚫 JWT manquant ou invalide !");
+            return res.status(401).json({ message: "Non autorisé, token manquant" });
+        }
+
+        const token = authHeader.split(" ")[1];
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
         req.user = verified;
+        console.log(`✅ Utilisateur authentifié: user_id=${req.user.user_id}`);
+
         next();
     } catch (error) {
-        res.status(400).json({ message: "Token invalide." });
+        console.error("🚨 Erreur d'authentification :", error.message);
+        return res.status(401).json({ message: "Non autorisé, token invalide" });
     }
 };
 

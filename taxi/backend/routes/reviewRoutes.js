@@ -47,6 +47,7 @@ const db = require("../config/db");
  *       500:
  *         description: Erreur serveur
  */
+
 router.post("/add", authMiddleware, async (req, res) => {
     try {
         const { ride_id, rating, comment } = req.body;

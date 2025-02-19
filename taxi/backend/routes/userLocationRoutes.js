@@ -60,6 +60,7 @@ module.exports = (io) => {
      *       500:
      *         description: Erreur serveur
      */
+    
     router.post("/update", authMiddleware, async (req, res) => {
         try {
             const { latitude, longitude } = req.body;
