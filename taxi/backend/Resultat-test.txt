@@ -1,4 +1,4 @@
-
+commande de test:  npm test > Resultat-test.txt 2>&1
 > backend@1.0.0 test
 > cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit
 
