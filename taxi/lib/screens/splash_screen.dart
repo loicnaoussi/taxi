@@ -43,6 +43,7 @@ class _SplashScreenState extends State<SplashScreen>
       final String? userType = prefs.getString('user_type');
 
       if (token != null && token.isNotEmpty) {
+        // ignore: unused_local_variable
         bool refreshed = await _refreshTokenIfNeeded();
         token = prefs.getString('token'); // Met à jour le token après rafraîchissement
         if (token != null && token.isNotEmpty) {

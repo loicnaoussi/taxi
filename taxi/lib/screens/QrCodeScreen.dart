@@ -10,7 +10,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/config.dart';
-import 'package:taxi/themes/theme.dart';
 
 class QrCodeScreen extends StatefulWidget {
   const QrCodeScreen({super.key});

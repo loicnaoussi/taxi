@@ -5,7 +5,6 @@ import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/config.dart';
-import 'package:taxi/themes/theme.dart';
 
 class QrScanScreen extends StatefulWidget {
   const QrScanScreen({super.key});
