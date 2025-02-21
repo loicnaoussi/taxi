@@ -1,11 +1,16 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/rendering.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taxi/config.dart';
+import 'package:taxi/themes/theme.dart';
 
 class QrCodeScreen extends StatefulWidget {
   const QrCodeScreen({super.key});
@@ -15,21 +20,122 @@ class QrCodeScreen extends StatefulWidget {
 }
 
 class _QrCodeScreenState extends State<QrCodeScreen> {
-  String _qrCodeData = 'https://example.com/driver';
+  String _qrCodeData = 'Chargement...';
   final GlobalKey _repaintBoundaryKey = GlobalKey();
   final Random _random = Random();
+  bool isLoadingQr = true;
 
-  void _generateQrCode() {
+  @override
+  void initState() {
+    super.initState();
+    _fetchQrCode();
+  }
+
+  // Récupérer le QR Code stocké pour l'utilisateur dans la BDD
+  Future<void> _fetchQrCode() async {
     setState(() {
-      _qrCodeData = 'https://example.com/driver/${_random.nextInt(9999)}';
+      isLoadingQr = true;
     });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? "";
+      final dio = Dio();
+      final response = await dio.get(
+        "${Config.baseUrl}/api/qrcodes/my-qrcode",
+        options: Options(
+          headers: {"Authorization": "Bearer $token"},
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      if (response.statusCode == 200 && response.data["qr_code"] != null) {
+        setState(() {
+          _qrCodeData = response.data["qr_code"];
+        });
+      } else {
+        // Aucun code n'existe encore : générer un code aléatoire et le stocker
+        await _generateAndStoreQrCode();
+      }
+    } catch (e) {
+      setState(() {
+        _qrCodeData = "Erreur lors du chargement";
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur de chargement: ${e.toString()}")),
+      );
+    } finally {
+      setState(() {
+        isLoadingQr = false;
+      });
+    }
+  }
+
+  // Affiche une boîte de dialogue de confirmation puis génère et stocke le nouveau QR Code
+  Future<void> _confirmAndGenerateQrCode() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Générer un nouveau QR Code"),
+        content: const Text("Êtes-vous sûr de vouloir générer un nouveau QR Code ? Cela remplacera l'ancien."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Confirmer"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _generateAndStoreQrCode();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nouveau QR Code généré avec succès")),
+      );
+    }
+  }
+
+  // Génère un nouveau QR Code aléatoire et l'envoie au backend pour mise à jour
+  Future<void> _generateAndStoreQrCode() async {
+    setState(() {
+      isLoadingQr = true;
+    });
+    try {
+      final newCode = 'QR${_random.nextInt(900000) + 100000}'; // Code à 6 chiffres
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? "";
+      final dio = Dio();
+      final response = await dio.post(
+        "${Config.baseUrl}/api/qrcodes/update",
+        data: {"qr_code": newCode},
+        options: Options(
+          headers: {"Authorization": "Bearer $token"},
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _qrCodeData = newCode;
+        });
+      } else {
+        throw "Erreur lors de la mise à jour du QR Code";
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur: ${e.toString()}")),
+      );
+    } finally {
+      setState(() {
+        isLoadingQr = false;
+      });
+    }
   }
 
   Future<void> _downloadQrCode() async {
     try {
-      final boundary =
-          _repaintBoundaryKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
+      final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
 
       final image = await boundary.toImage(pixelRatio: 3.0);
@@ -45,21 +151,19 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         _showSnackBar('QR Code saved to gallery');
       }
     } catch (e) {
-      _showSnackBar('Error: $e');
+      _showSnackBar('Error: ${e.toString()}');
     }
   }
 
   Future<void> _saveQRImage() async {
     try {
       final filePath = await FilePicker.platform.saveFile(
-        fileName: 'qr_code_${_random.nextInt(9999)}.png',
+        fileName: 'qr_code_${_random.nextInt(10000)}.png',
         type: FileType.image,
       );
       if (filePath == null) return;
 
-      final boundary =
-          _repaintBoundaryKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
+      final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
 
       final image = await boundary.toImage(pixelRatio: 3.0);
@@ -70,7 +174,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
       await ImageGallerySaver.saveImage(pngBytes, name: filePath);
       _showSnackBar('QR Code saved successfully');
     } catch (e) {
-      _showSnackBar('Error: $e');
+      _showSnackBar('Error: ${e.toString()}');
     }
   }
 
@@ -88,8 +192,10 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR Code Generator',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'QR Code Generator',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -106,23 +212,22 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
+            colors: [Colors.blue.shade50, Colors.white],
           ),
         ),
         child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                _buildQrCodeContainer(),
-                const SizedBox(height: 30),
-                _buildActionButtons(),
-              ],
-            ),
-          ),
+          child: isLoadingQr
+              ? const CircularProgressIndicator()
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      _buildQrCodeContainer(),
+                      const SizedBox(height: 30),
+                      _buildActionButtons(),
+                    ],
+                  ),
+                ),
         ),
       ),
     );
@@ -174,7 +279,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
           _buildGradientButton(
             text: 'Generate New QR',
             icon: Icons.autorenew_rounded,
-            onPressed: _generateQrCode,
+            onPressed: _confirmAndGenerateQrCode,
           ),
           const SizedBox(height: 15),
           _buildGradientButton(

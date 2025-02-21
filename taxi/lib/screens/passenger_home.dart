@@ -18,8 +18,9 @@ class PassengerHomeScreen extends StatefulWidget {
 
 class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   int _currentIndex = 0;
+  String? _profileImageUrl;
 
-  // Liste des pages : index 0 => carte, 1 => EditInfo, 2 => Identification, 3 => Emergency Contacts.
+  // Liste des pages : 0 => carte, 1 => EditInfo, 2 => Identification, 3 => Emergency Contacts.
   final List<Widget> _pages = [
     const GpsScanScreen(),
     const EditInfoScreen(),
@@ -27,20 +28,53 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     const EmergencyContactsScreen(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  // Charger l'URL de la photo de profil depuis SharedPreferences
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _profileImageUrl = prefs.getString('profileImageUrl');
+    });
+  }
+
   // Navigation du BottomNavigationBar
   void _onTabTapped(int index) {
     setState(() => _currentIndex = index);
   }
 
-  // Méthode de déconnexion
+  // Méthode de déconnexion avec confirmation
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('user_type');
-    Navigator.pushReplacementNamed(context, Routes.loginScreen);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Déconnexion"),
+        content: const Text("Êtes-vous sûr de vouloir vous déconnecter ?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Confirmer"),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('token');
+      await prefs.remove('user_type');
+      Navigator.pushReplacementNamed(context, Routes.loginScreen);
+    }
   }
 
-  // Ouvre l'écran de scan QR qui active la caméra
+  // Ouvre l'écran de scan QR
   void _openQrScanner() {
     Navigator.push(
       context,
@@ -61,7 +95,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     );
   }
 
-  /// Construction de l’en-tête
+  /// Barre d’entête avec avatar, logo, QR scan, notifications et déconnexion
   Widget _buildTopHeader() {
     return Container(
       height: 100,
@@ -86,19 +120,17 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
       child: SafeArea(
         child: Row(
           children: [
-            // Avatar de l'utilisateur (placeholder ici)
+            // Avatar de l'utilisateur
             GestureDetector(
               onTap: () {
-                // Exemple: ouvrir un menu de compte ou modal
+                // Exemple: ouvrir un menu de compte ou un modal
               },
               child: CircleAvatar(
                 radius: 22,
                 backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  size: 28,
-                  color: AppTheme.primaryColor.withOpacity(0.8),
-                ),
+                backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                    ? NetworkImage(_profileImageUrl!)
+                    : const AssetImage('assets/images/default_profile.png') as ImageProvider,
               ),
             ),
             const Spacer(),
@@ -109,7 +141,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
               fit: BoxFit.contain,
             ),
             const Spacer(),
-            // Bouton pour lancer le scanner QR (ouvre QrScanScreen)
+            // Bouton pour scanner un QR Code
             IconButton(
               icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
               tooltip: 'Scanner un QR Code',

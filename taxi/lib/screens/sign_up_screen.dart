@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/routes/routes.dart';
 import 'package:taxi/themes/theme.dart';
+import 'package:taxi/config.dart'; // Import du fichier de configuration
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -47,13 +48,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() {
       usernameError = validateUsername(usernameController.text)
           ? null
-          : "Username is required"; // ou "Le nom d'utilisateur est requis"
+          : "Le nom d'utilisateur est requis";
       emailError = validateEmail(emailController.text)
           ? null
-          : "Invalid email";
+          : "Email invalide";
       passwordError = validatePassword(passwordController.text)
           ? null
-          : "Password must be at least 6 characters";
+          : "Le mot de passe doit contenir au moins 6 caractères";
     });
 
     // Si l'une des validations échoue, on arrête
@@ -66,9 +67,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       // Appel à l'API /api/auth/register
       final Response response = await _dio.post(
-        "http://192.168.1.158:5000/api/auth/register",
+        "${Config.baseUrl}/api/auth/register",
         data: {
-          "username":     usernameController.text.trim(),  // <-- champ requis
+          "username":     usernameController.text.trim(),
           "full_name":    fullNameController.text.trim(),
           "email":        emailController.text.trim(),
           "phone_number": phoneController.text.trim(),
@@ -78,12 +79,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (response.statusCode == 201) {
-        // Le backend renvoie un JSON { message: "..."} (sans token),
-        // ou vous pourriez avoir un token si vous le générez ici.
-        // Ex: final String token = response.data["accessToken"] ?? "";
-        // On peut stocker si besoin :
+        // Stockage du rôle dans SharedPreferences
         final prefs = await SharedPreferences.getInstance();
-        // await prefs.setString('token', token); // si un token est renvoyé
         await prefs.setString('user_type', selectedRole);
 
         // Redirection selon le rôle
@@ -93,7 +90,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       } else {
         // Erreur renvoyée par le backend
-        final String message = response.data["message"] ?? "An error occurred.";
+        final String message = response.data["message"] ?? "Une erreur s'est produite.";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
@@ -101,7 +98,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (e) {
       // Erreur réseau ou autre
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Registration failed: ${e.toString()}")),
+        SnackBar(content: Text("L'inscription a échoué: ${e.toString()}")),
       );
     } finally {
       setState(() => isLoading = false);
@@ -130,7 +127,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Icon(Icons.local_taxi_rounded,
                     size: 90, color: AppTheme.primaryColor),
                 const SizedBox(height: 20),
-
                 const Text(
                   "Sign Up",
                   style: TextStyle(
@@ -146,8 +142,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 30),
-
-                // Champ "Username" (champ requis côté serveur)
+                // Champ "Username" (requis)
                 _buildTextField(
                   controller: usernameController,
                   hintText: "Username",
@@ -155,7 +150,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   errorText: usernameError,
                 ),
                 const SizedBox(height: 15),
-
                 // Champ "Full Name"
                 _buildTextField(
                   controller: fullNameController,
@@ -163,7 +157,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   icon: Icons.person,
                 ),
                 const SizedBox(height: 15),
-
                 // Champ "Email"
                 _buildTextField(
                   controller: emailController,
@@ -172,7 +165,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   errorText: emailError,
                 ),
                 const SizedBox(height: 15),
-
                 // Champ "Phone Number"
                 _buildTextField(
                   controller: phoneController,
@@ -180,15 +172,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   icon: Icons.phone_outlined,
                 ),
                 const SizedBox(height: 15),
-
                 // Champ "Password"
                 _buildPasswordField(),
                 const SizedBox(height: 20),
-
-                // Sélection du rôle (driver/passenger)
+                // Sélection du rôle (driver / passenger)
                 _buildRoleSelection(),
                 const SizedBox(height: 20),
-
                 // Bouton "Sign Up"
                 ElevatedButton(
                   onPressed: isLoading ? null : _signUp,
@@ -212,7 +201,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                 ),
                 const SizedBox(height: 20),
-
                 // Lien vers "Log In"
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -223,9 +211,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        // Redirection vers la page de connexion
-                        Navigator.pushReplacementNamed(
-                            context, Routes.loginScreen);
+                        Navigator.pushReplacementNamed(context, Routes.loginScreen);
                       },
                       child: const Text(
                         "Log In",
@@ -268,7 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  /// Password Field avec visibilité toggle
+  /// Password Field avec toggle de visibilité
   Widget _buildPasswordField() {
     return TextField(
       controller: passwordController,
@@ -280,8 +266,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             isPasswordVisible ? Icons.visibility : Icons.visibility_off,
             color: AppTheme.primaryColor,
           ),
-          onPressed: () =>
-              setState(() => isPasswordVisible = !isPasswordVisible),
+          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
         ),
         hintText: "Password",
         errorText: passwordError,
@@ -295,7 +280,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  /// Sélection du rôle (driver / passenger)
+  /// Sélection du rôle
   Widget _buildRoleSelection() {
     return Column(
       children: [

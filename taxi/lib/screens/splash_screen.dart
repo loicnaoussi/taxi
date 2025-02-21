@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/routes/routes.dart';
+import 'package:dio/dio.dart';
+import 'package:taxi/config.dart'; // Assurez-vous d'avoir créé ce fichier
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,24 +36,53 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Au bout de 3 secondes, on vérifie le token en base
+    // Après 3 secondes, vérifiez le token et essayez de le rafraîchir
     Future.delayed(const Duration(seconds: 3), () async {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      final userType = prefs.getString('user_type');
+      String? token = prefs.getString('token');
+      final String? userType = prefs.getString('user_type');
 
       if (token != null && token.isNotEmpty) {
-        // déjà connecté : on regarde le userType
-        if (userType == 'driver') {
-          Navigator.pushReplacementNamed(context, Routes.driverHome);
-        } else {
-          Navigator.pushReplacementNamed(context, Routes.passengerHome);
+        bool refreshed = await _refreshTokenIfNeeded();
+        token = prefs.getString('token'); // Met à jour le token après rafraîchissement
+        if (token != null && token.isNotEmpty) {
+          // Navigation en fonction du userType
+          if (userType == 'driver') {
+            Navigator.pushReplacementNamed(context, Routes.driverHome);
+          } else {
+            Navigator.pushReplacementNamed(context, Routes.passengerHome);
+          }
+          return;
         }
-      } else {
-        // pas de token => on va sur l'écran de login
-        Navigator.pushReplacementNamed(context, Routes.loginScreen);
       }
+      // Pas de token valide, redirige vers l'écran de login
+      Navigator.pushReplacementNamed(context, Routes.loginScreen);
     });
+  }
+
+  // Méthode pour rafraîchir le token via l'endpoint dédié
+  Future<bool> _refreshTokenIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final refreshToken = prefs.getString('refresh_token');
+    if (refreshToken == null || refreshToken.isEmpty) return false;
+
+    try {
+      final dio = Dio();
+      final response = await dio.post(
+        "${Config.baseUrl}/api/auth/refresh-token", // Utilisez Config.baseUrl ici
+        data: {"refresh_token": refreshToken},
+      );
+      if (response.statusCode == 200) {
+        final newAccessToken = response.data["accessToken"];
+        final newRefreshToken = response.data["refreshToken"];
+        await prefs.setString('token', newAccessToken);
+        await prefs.setString('refresh_token', newRefreshToken);
+        return true;
+      }
+    } catch (e) {
+      debugPrint("Erreur de rafraîchissement du token: $e");
+    }
+    return false;
   }
 
   @override
@@ -121,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ],
               ),
             ),
-            // Barre de progression
+            // Barre de progression en bas
             Positioned(
               bottom: 50,
               left: 0,
@@ -139,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-            // Version
+            // Version de l'app
             Positioned(
               bottom: 20,
               left: 0,

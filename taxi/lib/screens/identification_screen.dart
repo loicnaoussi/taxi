@@ -1,4 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taxi/config.dart';
 import 'package:taxi/themes/theme.dart';
 
 class IdentificationScreen extends StatefulWidget {
@@ -9,29 +14,98 @@ class IdentificationScreen extends StatefulWidget {
 }
 
 class _IdentificationScreenState extends State<IdentificationScreen> {
-  final Map<String, String?> _uploads = {
+  // Map to store file paths for each document type
+  final Map<String, File?> _selectedFiles = {
     'photo': null,
     'video': null,
     'cni': null,
     'card': null,
   };
 
+  // This function uses FilePicker to pick a file and stores the result.
   Future<void> _pickFile(String fileType) async {
-    // ICI: Sélecteur de fichier => ex. FilePicker
-    setState(() {
-      _uploads[fileType] =
-          'fichier_selectionné.${fileType == 'video' ? 'mp4' : 'jpg'}';
-    });
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: fileType == 'video' ? FileType.video : FileType.image,
+      );
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _selectedFiles[fileType] = File(result.files.single.path!);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Fichier pour $fileType sélectionné")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur lors du choix du fichier: $e")),
+      );
+    }
   }
 
-  void _submitVerification() {
-    if (_uploads.values.any((v) => v == null)) {
+  // Submits the verification documents to the backend.
+  Future<void> _submitVerification() async {
+    // Check that all files are selected.
+    if (_selectedFiles.values.any((file) => file == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez uploader tous les documents')),
       );
       return;
     }
-    // Logique de soumission => ex: POST /api/verifications/upload-verification
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null || token.isEmpty) {
+        throw "Utilisateur non authentifié.";
+      }
+
+      // Create a FormData object with all selected files.
+      final formData = FormData.fromMap({
+        "verification_video": await MultipartFile.fromFile(
+          _selectedFiles['video']!.path,
+          filename: _selectedFiles['video']!.path.split('/').last,
+        ),
+        "cni_front": await MultipartFile.fromFile(
+          _selectedFiles['cni']!.path,
+          filename: _selectedFiles['cni']!.path.split('/').last,
+        ),
+        "cni_back": await MultipartFile.fromFile(
+          _selectedFiles['card']!.path,
+          filename: _selectedFiles['card']!.path.split('/').last,
+        ),
+        // For the photo, you might choose to send it separately or include it if needed.
+        "photo": await MultipartFile.fromFile(
+          _selectedFiles['photo']!.path,
+          filename: _selectedFiles['photo']!.path.split('/').last,
+        ),
+      });
+
+      final response = await Dio().post(
+        "${Config.baseUrl}/api/verifications/upload-verification",
+        data: formData,
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "multipart/form-data",
+          },
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fichiers de vérification envoyés avec succès !")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur lors de l'envoi: ${response.data['message'] ?? ''}")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur: $e")),
+      );
+    }
   }
 
   @override
@@ -88,25 +162,28 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
   }
 
   Widget _buildHeader() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(
-        'Vérification de sécurité',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: AppTheme.primaryColor,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Vérification de sécurité',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
         ),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        'Veuillez fournir les documents suivants pour compléter votre vérification',
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.grey[600],
-          height: 1.4,
+        const SizedBox(height: 10),
+        Text(
+          'Veuillez fournir les documents suivants pour compléter votre vérification',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+            height: 1.4,
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _buildUploadCard({
@@ -158,13 +235,13 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        _uploads[fileType] ?? subtitle,
+                        _selectedFiles[fileType]?.path.split('/').last ?? subtitle,
                         style: TextStyle(
                           fontSize: 14,
-                          color: _uploads[fileType] != null
+                          color: _selectedFiles[fileType] != null
                               ? Colors.grey[800]
                               : Colors.grey[600],
-                          fontStyle: _uploads[fileType] != null
+                          fontStyle: _selectedFiles[fileType] != null
                               ? FontStyle.italic
                               : FontStyle.normal,
                         ),
@@ -173,10 +250,10 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
                   ),
                 ),
                 Icon(
-                  _uploads[fileType] != null
+                  _selectedFiles[fileType] != null
                       ? Icons.check_circle_rounded
                       : Icons.upload_rounded,
-                  color: _uploads[fileType] != null ? Colors.green : color,
+                  color: _selectedFiles[fileType] != null ? Colors.green : color,
                 ),
               ],
             ),

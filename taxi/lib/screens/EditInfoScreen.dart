@@ -1,10 +1,10 @@
-// ignore_for_file: unused_local_variable
-
+// lib/EditInfoScreen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taxi/config.dart'; // Contains Config.baseUrl
 import 'package:taxi/themes/theme.dart';
 
 class EditInfoScreen extends StatefulWidget {
@@ -15,18 +15,22 @@ class EditInfoScreen extends StatefulWidget {
 }
 
 class _EditInfoScreenState extends State<EditInfoScreen> {
-  // Contrôleurs de texte
-  final TextEditingController _nameController = TextEditingController();
+  // Controllers for basic profile info
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  // Contrôleurs contacts d’urgence
-  final TextEditingController _emergencyContact1Controller = TextEditingController();
-  final TextEditingController _emergencyContact2Controller = TextEditingController();
+  // Controllers for password update
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   File? _selectedImageFile;
+  String? _profileImageUrl; // URL of the current profile photo from the backend
 
-  // Pour une meilleure UX, on peut ajouter un booléen d’état de chargement
   bool isLoading = false;
+  bool isSaving = false;
 
   @override
   void initState() {
@@ -34,38 +38,39 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
     _loadUserInfo();
   }
 
-  // Chargement des infos utilisateur depuis le backend
+  // Load driver profile information from the backend
   Future<void> _loadUserInfo() async {
-    // Ex: GET /api/users/profile
-    // Remplacez la logique ici pour peupler _nameController, _phoneController, etc.
     try {
       final token = await _getToken();
       final response = await Dio().get(
-        "http://votre-backend/api/users/profile",
-        options: Options(headers: {
-          "Authorization": "Bearer $token"
-        }),
+        "${Config.baseUrl}/api/users/profile",
+        options: Options(headers: {"Authorization": "Bearer $token"}),
       );
       if (response.statusCode == 200) {
-        final data = response.data["user"]; 
+        final data = response.data["user"];
         setState(() {
-          _nameController.text = data["full_name"] ?? "";
+          _usernameController.text = data["username"] ?? "";
+          _fullNameController.text = data["full_name"] ?? "";
+          _emailController.text = data["email"] ?? "";
           _phoneController.text = data["phone_number"] ?? "";
-          // etc.
+          _profileImageUrl = data["profile_image_url"] ?? "";
         });
       }
     } catch (e) {
-      // Gérer l’erreur
+      debugPrint("Erreur lors du chargement du profil: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Erreur lors du chargement du profil")),
+      );
     }
   }
 
-  // Récupération du token
+  // Retrieve token from SharedPreferences
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString("token");
   }
 
-  // Récupération / prise de la photo
+  // Pick a new profile image from camera or gallery
   Future<void> _pickImage(ImageSource source) async {
     try {
       final pickedFile = await ImagePicker().pickImage(source: source);
@@ -77,13 +82,14 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur: $e'),
+          content: Text("Erreur: ${e.toString()}"),
           backgroundColor: Colors.red[800],
         ),
       );
     }
   }
 
+  // Show modal bottom sheet to choose image source
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
@@ -97,7 +103,7 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
               color: Colors.black.withOpacity(0.1),
               blurRadius: 20,
               spreadRadius: 2,
-            )
+            ),
           ],
         ),
         child: SafeArea(
@@ -105,15 +111,15 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildSourceOption(
-                icon: Icons.camera_enhance_rounded,
+                icon: Icons.camera_alt,
                 label: 'Prendre une photo',
                 color: AppTheme.primaryColor,
                 onTap: () => _pickImage(ImageSource.camera),
               ),
               _buildSourceOption(
-                icon: Icons.photo_library_rounded,
-                label: 'Choisir depuis la galerie',
-                color: Colors.blue[700]!,
+                icon: Icons.photo_library,
+                label: 'Galerie',
+                color: Colors.blue,
                 onTap: () => _pickImage(ImageSource.gallery),
               ),
               const SizedBox(height: 10),
@@ -153,47 +159,74 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
     );
   }
 
-  // Enregistrement des infos
+  // Save profile changes to the backend
   Future<void> _saveInfo() async {
-    setState(() => isLoading = true);
-
+    setState(() => isSaving = true);
     try {
       final token = await _getToken();
 
-      // 1) Uploader l'image si besoin
+      // 1) Upload profile image if a new one is selected
       if (_selectedImageFile != null) {
         final formData = FormData.fromMap({
           "profile_image": await MultipartFile.fromFile(
             _selectedImageFile!.path,
             filename: _selectedImageFile!.path.split('/').last,
-          )
+          ),
         });
-        final resp = await Dio().post(
-          "http://votre-backend/api/users/upload-photo",
+        await Dio().post(
+          "${Config.baseUrl}/api/users/upload-photo",
           data: formData,
-          options: Options(headers: {
-            "Authorization": "Bearer $token",
-            "Content-Type": "multipart/form-data"
-          }),
+          options: Options(
+            headers: {
+              "Authorization": "Bearer $token",
+              "Content-Type": "multipart/form-data"
+            },
+          ),
         );
-        // Gérer la réponse...
       }
 
-      // 2) Mise à jour du nom, téléphone, contacts d’urgence
+      // 2) If password fields are filled, validate and update password
+      if (_currentPasswordController.text.isNotEmpty ||
+          _newPasswordController.text.isNotEmpty ||
+          _confirmPasswordController.text.isNotEmpty) {
+        if (_currentPasswordController.text.isEmpty ||
+            _newPasswordController.text.isEmpty ||
+            _confirmPasswordController.text.isEmpty) {
+          throw "Veuillez remplir tous les champs pour changer le mot de passe.";
+        }
+        if (_newPasswordController.text != _confirmPasswordController.text) {
+          throw "Le nouveau mot de passe et sa confirmation ne correspondent pas.";
+        }
+        // Verify current password via backend
+        final checkResp = await Dio().post(
+          "${Config.baseUrl}/api/auth/check-password",
+          data: {"password": _currentPasswordController.text},
+          options: Options(headers: {"Authorization": "Bearer $token"}),
+        );
+        if (checkResp.data["valid"] != true) {
+          throw "Le mot de passe actuel est incorrect.";
+        }
+        // Update password via dedicated endpoint
+        await Dio().put(
+          "${Config.baseUrl}/api/auth/change-password",
+          data: {"new_password": _newPasswordController.text},
+          options: Options(headers: {"Authorization": "Bearer $token"}),
+        );
+      }
+
+      // 3) Update basic profile information
       final updateData = {
-        "full_name": _nameController.text.trim(),
+        "username": _usernameController.text.trim(),
+        "full_name": _fullNameController.text.trim(),
+        "email": _emailController.text.trim(),
         "phone_number": _phoneController.text.trim(),
-        // etc.
       };
 
-      final updateResp = await Dio().put(
-        "http://votre-backend/api/auth/update",
+      await Dio().put(
+        "${Config.baseUrl}/api/auth/update",
         data: updateData,
-        options: Options(headers: {
-          "Authorization": "Bearer $token"
-        }),
+        options: Options(headers: {"Authorization": "Bearer $token"}),
       );
-      // Gérer la réponse...
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -209,11 +242,23 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(content: Text("Erreur: $e")),
       );
     } finally {
-      setState(() => isLoading = false);
+      setState(() => isSaving = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -229,6 +274,8 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
             const SizedBox(height: 30),
             _buildInputSection(),
             const SizedBox(height: 30),
+            _buildPasswordSection(),
+            const SizedBox(height: 30),
             _buildSaveButton(),
           ],
         ),
@@ -241,14 +288,10 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
       backgroundColor: AppTheme.primaryColor,
       elevation: 0,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
-      ),
+      // Remove back arrow for full-screen driver profile edit
+      automaticallyImplyLeading: false,
       title: const Text(
         'Modifier le profil',
         style: TextStyle(
@@ -258,9 +301,11 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
           letterSpacing: 0.5,
         ),
       ),
+      centerTitle: true,
     );
   }
 
+  // Profile photo section
   Widget _buildProfileSection() {
     return Column(
       children: [
@@ -284,7 +329,9 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
                     onTap: _showImageSourceDialog,
                     child: _selectedImageFile != null
                         ? Image.file(_selectedImageFile!, fit: BoxFit.cover)
-                        : Icon(Icons.person_rounded, size: 50, color: Colors.grey[500]),
+                        : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                            ? Image.network(_profileImageUrl!, fit: BoxFit.cover)
+                            : Icon(Icons.person_rounded, size: 50, color: Colors.grey[500])),
                   ),
                 ),
               ),
@@ -322,14 +369,27 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
     );
   }
 
+  // Input fields for basic profile info
   Widget _buildInputSection() {
     return Column(
       children: [
         _buildInputField(
           icon: Icons.person_outline_rounded,
-          label: 'Nom complet',
-          controller: _nameController,
+          label: 'Nom d’utilisateur',
+          controller: _usernameController,
           color: Colors.blue[700]!,
+        ),
+        _buildInputField(
+          icon: Icons.person,
+          label: 'Nom complet',
+          controller: _fullNameController,
+          color: Colors.blue,
+        ),
+        _buildInputField(
+          icon: Icons.email_outlined,
+          label: 'Email',
+          controller: _emailController,
+          color: Colors.deepOrange,
         ),
         _buildInputField(
           icon: Icons.phone_iphone_rounded,
@@ -337,12 +397,47 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
           controller: _phoneController,
           color: Colors.green[700]!,
         ),
-        const SizedBox(height: 20),
-        _buildEmergencySection(),
       ],
     );
   }
 
+  // Section for password change
+  Widget _buildPasswordSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Modifier le mot de passe",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildInputField(
+          icon: Icons.lock_outline,
+          label: 'Mot de passe actuel',
+          controller: _currentPasswordController,
+          color: Colors.red,
+        ),
+        _buildInputField(
+          icon: Icons.lock_open,
+          label: 'Nouveau mot de passe',
+          controller: _newPasswordController,
+          color: Colors.red,
+        ),
+        _buildInputField(
+          icon: Icons.lock,
+          label: 'Confirmer le nouveau mot de passe',
+          controller: _confirmPasswordController,
+          color: Colors.red,
+        ),
+      ],
+    );
+  }
+
+  // Generic input field widget
   Widget _buildInputField({
     required IconData icon,
     required String label,
@@ -381,69 +476,18 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
     );
   }
 
-  Widget _buildEmergencySection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.red[50]!,
-            Colors.red[50]!.withOpacity(0.5),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.withOpacity(0.05),
-            blurRadius: 20,
-            spreadRadius: 2,
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.emergency_share_rounded, color: Colors.red[800]),
-              const SizedBox(width: 10),
-              Text(
-                'Contacts d\'urgence',
-                style: TextStyle(
-                  color: Colors.red[800],
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildInputField(
-            icon: Icons.contact_emergency_rounded,
-            label: 'Contact 1',
-            controller: _emergencyContact1Controller,
-            color: Colors.orange[700]!,
-          ),
-          _buildInputField(
-            icon: Icons.contact_emergency_rounded,
-            label: 'Contact 2',
-            controller: _emergencyContact2Controller,
-            color: Colors.orange[700]!,
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Save button widget
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        icon: const Icon(Icons.save_rounded, size: 24),
-        label: isLoading
+        icon: isSaving
             ? const CircularProgressIndicator(color: Colors.white)
-            : const Text('ENREGISTRER LES CHANGEMENTS'),
-        onPressed: isLoading ? null : _saveInfo,
+            : const Icon(Icons.save_rounded, size: 24),
+        label: isSaving
+            ? const Text("")
+            : const Text("ENREGISTRER LES CHANGEMENTS"),
+        onPressed: isSaving ? null : _saveInfo,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,

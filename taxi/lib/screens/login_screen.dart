@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taxi/config.dart';
 import 'package:taxi/routes/routes.dart';
 import 'package:taxi/themes/theme.dart';
 
@@ -13,9 +14,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController identifierController = TextEditingController();
-  final TextEditingController passwordController   = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  bool isLoading         = false;
+  bool isLoading = false;
   bool isPasswordVisible = false;
 
   String? identifierError;
@@ -23,15 +24,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final Dio _dio = Dio();
 
-  /// Validation de base pour l'identifiant
+  /// Basic validation for the identifier field (email or phone)
   bool validateIdentifier(String ident) => ident.trim().isNotEmpty;
 
-  /// Validation de base pour le mot de passe (6 caractères minimum)
+  /// Basic validation for the password (at least 6 characters)
   bool validatePassword(String pwd) => pwd.length >= 6;
 
-  /// Appel API pour la connexion
+  /// Login API call
   Future<void> _login() async {
-    // Vérifications élémentaires côté client
+    // Client-side validations
     setState(() {
       identifierError = validateIdentifier(identifierController.text)
           ? null
@@ -46,9 +47,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      // Appel à l'API de login
+      // Call the login endpoint using the baseUrl from config.dart
       final Response response = await _dio.post(
-        "http://192.168.1.158:5000/api/auth/login", // <-- Remplacez par votre URL de login
+        "${Config.baseUrl}/api/auth/login",
         data: {
           "identifier": identifierController.text.trim(),
           "password": passwordController.text,
@@ -56,145 +57,38 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Dans votre backend, vous renvoyez par ex. { "accessToken": "...", "user": {...} }
-        final data      = response.data;
-        final String token    = data["accessToken"] ?? "";
-        final userType        = data["user"]?["user_type"] ?? "passenger";
+        // Expecting response: { "accessToken": "...", "user": { "user_type": "...", ... } }
+        final data = response.data;
+        final String token = data["accessToken"] ?? "";
+        final String userType = data["user"]?["user_type"] ?? "passenger";
 
-        // Stockage local avec SharedPreferences
+        // Store token and user type locally
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
         await prefs.setString('user_type', userType);
 
-        // Redirection : si driver => DriverHome, sinon => PassengerHome
+        // Navigate based on user type
         if (userType == "driver") {
           Navigator.pushReplacementNamed(context, Routes.driverHome);
         } else {
           Navigator.pushReplacementNamed(context, Routes.passengerHome);
         }
       } else {
-        // Message d’erreur renvoyé par l’API
+        // Display error message from API response
         final String msg = response.data["message"] ?? "Login failed.";
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
       }
     } catch (e) {
-      // Erreur réseau ou autre
+      // Handle network or other errors
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login failed: ${e.toString()}")),
-      );
+          SnackBar(content: Text("Login failed: ${e.toString()}")));
     } finally {
       setState(() => isLoading = false);
     }
   }
 
-  /// Construction de l'interface
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        // Dégradé en fond, comme dans votre SignUpScreen
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryColor.withOpacity(0.1), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icône/Login
-                Icon(Icons.login_rounded, size: 90, color: AppTheme.primaryColor),
-                const SizedBox(height: 20),
-
-                const Text(
-                  "Log In",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "Access your account",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 30),
-
-                // Champ Email ou Téléphone
-                _buildTextField(
-                  controller: identifierController,
-                  hintText: "Email or Phone",
-                  icon: Icons.person_outline,
-                  errorText: identifierError,
-                ),
-                const SizedBox(height: 15),
-
-                // Champ Password
-                _buildPasswordField(),
-                const SizedBox(height: 20),
-
-                // Bouton de connexion
-                ElevatedButton(
-                  onPressed: isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: AppTheme.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          "Log In",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 20),
-
-                // Lien "Sign Up" si pas de compte
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.grey.shade700),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        // Vous pouvez renvoyer vers votre page d'inscription
-                        Navigator.pushReplacementNamed(context, Routes.signUpScreen);
-                      },
-                      child: const Text(
-                        "Sign Up",
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// TextField générique
+  /// Build a generic text field widget
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -217,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Champ mot de passe avec bouton de visibilité
+  /// Build password field with toggle for visibility
   Widget _buildPasswordField() {
     return TextField(
       controller: passwordController,
@@ -229,7 +123,8 @@ class _LoginScreenState extends State<LoginScreen> {
             isPasswordVisible ? Icons.visibility : Icons.visibility_off,
             color: AppTheme.primaryColor,
           ),
-          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+          onPressed: () =>
+              setState(() => isPasswordVisible = !isPasswordVisible),
         ),
         hintText: "Password",
         errorText: passwordError,
@@ -238,6 +133,107 @@ class _LoginScreenState extends State<LoginScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        // Light gradient background
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.primaryColor.withOpacity(0.1), Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon and title
+                Icon(Icons.login_rounded, size: 90, color: AppTheme.primaryColor),
+                const SizedBox(height: 20),
+                const Text(
+                  "Log In",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Access your account",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 30),
+                // Email or phone field
+                _buildTextField(
+                  controller: identifierController,
+                  hintText: "Email or Phone",
+                  icon: Icons.person_outline,
+                  errorText: identifierError,
+                ),
+                const SizedBox(height: 15),
+                // Password field
+                _buildPasswordField(),
+                const SizedBox(height: 20),
+                // Login button
+                ElevatedButton(
+                  onPressed: isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Log In",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 20),
+                // Link to Sign Up screen
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacementNamed(
+                            context, Routes.signUpScreen);
+                      },
+                      child: const Text(
+                        "Sign Up",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

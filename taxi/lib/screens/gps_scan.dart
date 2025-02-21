@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dio/dio.dart';
+import 'package:share_plus/share_plus.dart';
 
 class GpsScanScreen extends StatefulWidget {
   const GpsScanScreen({super.key});
@@ -25,10 +25,13 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
   final double _initialZoom = 13.0;
   double _currentZoom = 13.0;
 
-  // Liste des marqueurs pour les chauffeurs (récupérés depuis le backend)
+  // Liste des marqueurs pour les chauffeurs disponibles (à récupérer depuis votre backend)
   List<Marker> _driverMarkers = [];
   // Points pour afficher l’itinéraire (polyline)
   List<LatLng> _routePoints = [];
+
+  // Contrôleur de la barre de recherche
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -36,23 +39,28 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
     _initLocation();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initLocation() async {
     setState(() => _isLoading = true);
     try {
+      // Vérifier si le service de localisation est activé
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw 'Service de localisation désactivé';
-      }
+      if (!serviceEnabled) throw 'Service de localisation désactivé';
+
+      // Vérifier et demander la permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw 'Permission refusée';
-        }
+        if (permission == LocationPermission.denied) throw 'Permission refusée';
       }
-      if (permission == LocationPermission.deniedForever) {
-        throw 'Permission définitivement refusée';
-      }
+      if (permission == LocationPermission.deniedForever) throw 'Permission définitivement refusée';
+
+      // Obtenir la position actuelle
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
       );
@@ -60,7 +68,8 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
         _currentPosition = LatLng(pos.latitude, pos.longitude);
         _locationError = null;
       });
-      // Une fois le widget rendu, déplacer la caméra et récupérer les chauffeurs
+
+      // Déplacer la carte et récupérer les chauffeurs après le rendu
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_currentPosition != null) {
           _mapController.move(_currentPosition!, _currentZoom);
@@ -74,7 +83,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
     }
   }
 
-  // Récupère les positions des chauffeurs depuis le backend (à adapter selon votre API)
+  // Simulation de la récupération des chauffeurs disponibles depuis le backend
   Future<void> _fetchAvailableDrivers() async {
     if (_currentPosition == null) return;
     try {
@@ -110,7 +119,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
     }
   }
 
-  // Recherche de destination via l'API Nominatim
+  // Recherche de destination via l'API Nominatim (géocodage gratuit)
   Future<LatLng?> _searchDestination(String query) async {
     try {
       final response = await Dio().get(
@@ -118,7 +127,9 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
         queryParameters: {"q": query, "format": "json", "limit": 1},
         options: Options(headers: {"User-Agent": "flutter_map_app"}),
       );
-      if (response.statusCode == 200 && response.data is List && response.data.isNotEmpty) {
+      if (response.statusCode == 200 &&
+          response.data is List &&
+          response.data.isNotEmpty) {
         final result = response.data[0];
         double lat = double.parse(result["lat"]);
         double lon = double.parse(result["lon"]);
@@ -130,7 +141,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
     return null;
   }
 
-  // Calculer l'itinéraire en utilisant l'API OSRM (route la plus courte)
+  // Calcul de l'itinéraire via l'API OSRM
   Future<void> _calculateRoute(LatLng destination) async {
     if (_currentPosition == null) return;
     try {
@@ -141,11 +152,11 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
       );
       if (response.statusCode == 200) {
         List polyline = response.data["routes"][0]["geometry"]["coordinates"];
-        List<LatLng> routePoints = polyline.map<LatLng>((pt) => LatLng(pt[1], pt[0])).toList();
+        List<LatLng> routePoints =
+            polyline.map<LatLng>((pt) => LatLng(pt[1], pt[0])).toList();
         setState(() {
           _routePoints = routePoints;
         });
-        // Déplacer la carte sur la destination
         _mapController.move(destination, _currentZoom);
       }
     } catch (e) {
@@ -153,7 +164,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
     }
   }
 
-  // Lorsque l'utilisateur soumet une recherche de destination via la barre de recherche
+  // Lorsque l'utilisateur soumet une recherche via la barre de recherche
   Future<void> _onSearchSubmitted(String query) async {
     LatLng? destination = await _searchDestination(query);
     if (destination != null) {
@@ -168,13 +179,24 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
     }
   }
 
-  // Permet à l'utilisateur de définir la destination en tapotant sur la carte
+  // Permettre à l'utilisateur de définir sa destination en tapotant sur la carte
   void _onMapTap(TapPosition tapPosition, LatLng point) {
     setState(() {
       _destination = point;
-      // On peut déclencher le calcul d'itinéraire dès la sélection
-      _calculateRoute(point);
     });
+    _calculateRoute(point);
+  }
+
+  // Partage des informations du trajet via share_plus
+  Future<void> _shareTripDetails() async {
+    if (_currentPosition == null || _destination == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Veuillez définir votre destination")),
+      );
+      return;
+    }
+    final shareMessage = "Trajet:\nDépart: $_currentPosition\nDestination: $_destination";
+    await Share.share(shareMessage);
   }
 
   @override
@@ -191,7 +213,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
             )
           else
             _buildMap(),
-          // Barre de recherche flottante pour saisir une destination
+          // Barre de recherche flottante en haut
           Positioned(
             top: 20,
             left: 20,
@@ -210,7 +232,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
                 ],
               ),
               child: TextField(
-                onSubmitted: _onSearchSubmitted,
+                controller: _searchController,
                 decoration: InputDecoration(
                   hintText: "Rechercher une destination...",
                   suffixIcon: IconButton(
@@ -219,11 +241,11 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
                   ),
                   border: InputBorder.none,
                 ),
-                controller: _searchController,
+                onSubmitted: _onSearchSubmitted,
               ),
             ),
           ),
-          // Bouton pour rafraîchir la position
+          // Bouton pour rafraîchir la position (en bas à droite)
           if (!_isLoading && _locationError == null)
             Positioned(
               bottom: 20,
@@ -233,13 +255,20 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
                 child: const Icon(Icons.my_location),
               ),
             ),
+          // Bouton pour partager le trajet (en bas à gauche)
+          if (!_isLoading && _locationError == null)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              child: FloatingActionButton(
+                onPressed: _shareTripDetails,
+                child: const Icon(Icons.share),
+              ),
+            ),
         ],
       ),
     );
   }
-
-  // Contrôleur pour la barre de recherche
-  final TextEditingController _searchController = TextEditingController();
 
   Widget _buildMap() {
     return FlutterMap(
@@ -291,7 +320,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
           MarkerLayer(
             markers: _driverMarkers,
           ),
-        // Affichage de l'itinéraire calculé (polyline)
+        // Affichage de l'itinéraire (polyline)
         if (_routePoints.isNotEmpty)
           PolylineLayer(
             polylines: [
