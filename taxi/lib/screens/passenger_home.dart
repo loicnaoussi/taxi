@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:taxi/screens/edit_info_screen.dart';
+import 'package:taxi/screens/EditInfoScreen.dart';
 import 'package:taxi/screens/identification_screen.dart';
 import 'package:taxi/screens/emergency_contacts_screen.dart';
 import 'package:taxi/screens/notifications_screen.dart';
