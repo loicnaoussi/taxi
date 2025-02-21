@@ -31,7 +31,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     _fetchQrCode();
   }
 
-  // Retrieve the stored QR Code from the backend without auto-generating a new one.
+  // Fetch the stored QR code from the backend.
   Future<void> _fetchQrCode() async {
     setState(() {
       isLoadingQr = true;
@@ -52,9 +52,9 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
           _qrCodeData = response.data["qr_code"];
         });
       } else {
-        // No QR code found; display message and do not auto-generate.
+        // If no code exists, let the user generate one manually.
         setState(() {
-          _qrCodeData = "Aucun QR Code";
+          _qrCodeData = "Aucun QR Code trouvé";
         });
       }
     } catch (e) {
@@ -71,14 +71,13 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
-  // Show a confirmation dialog, then generate and store a new QR Code if confirmed.
+  // Confirm and generate a new QR code manually.
   Future<void> _confirmAndGenerateQrCode() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Générer un nouveau QR Code"),
-        content: const Text(
-            "Êtes-vous sûr de vouloir générer un nouveau QR Code ? Cela remplacera l'ancien."),
+        content: const Text("Êtes-vous sûr de vouloir générer un nouveau QR Code ? Cela remplacera l'ancien."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -100,7 +99,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
-  // Generates a new random QR Code and sends it to the backend for updating.
+  // Generate a new 6-digit QR code and update it on the backend.
   Future<void> _generateAndStoreQrCode() async {
     setState(() {
       isLoadingQr = true;
@@ -255,13 +254,15 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         child: QrImageView(
           data: _qrCodeData,
           version: QrVersions.auto,
-          // Note: The QrImageView widget from qr_flutter package does not accept a 'size' parameter.
-          // Instead, wrap it in a SizedBox to control its dimensions.
-          // For example:
-          // child: SizedBox(width: 220, height: 220, child: QrImage(...))
-          // Here we use a SizedBox:
-          // Alternatively, if your version supports 'size', you may use it.
-          // We'll wrap with SizedBox:
+          size: 220,
+          eyeStyle: const QrEyeStyle(
+            eyeShape: QrEyeShape.square,
+            color: Colors.blueGrey,
+          ),
+          dataModuleStyle: const QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: Colors.black87,
+          ),
           embeddedImage: const AssetImage('assets/images/logo.png'),
           embeddedImageStyle: QrEmbeddedImageStyle(
             size: const Size(40, 40),

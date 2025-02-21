@@ -39,13 +39,17 @@ const db = require("../config/db");
  */
 router.get("/my-qrcode", authMiddleware, async (req, res) => {
     try {
-        const [qrCode] = await db.query("SELECT qr_data FROM qr_codes WHERE user_id = ?", [req.user.user_id]);
+        const [rows] = await db.query("SELECT qr_data FROM qr_codes WHERE user_id = ?", [req.user.user_id]);
 
-        if (qrCode.length === 0) {
-            return res.status(404).json({ message: "Aucun QR Code trouvé." });
+        if (rows.length === 0) {
+            // Génération d'un QR Code à 6 chiffres précédé de "QR"
+            const newCode = "QR" + (Math.floor(Math.random() * 900000) + 100000);
+            // Insérer le nouveau QR Code dans la base de données pour cet utilisateur
+            await db.query("INSERT INTO qr_codes (user_id, qr_data) VALUES (?, ?)", [req.user.user_id, newCode]);
+            return res.json({ qr_code: newCode });
         }
 
-        res.json({ qr_code: qrCode[0].qr_data });
+        res.json({ qr_code: rows[0].qr_data });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -90,6 +94,60 @@ router.get("/my-qrcode", authMiddleware, async (req, res) => {
  *       500:
  *         description: Erreur serveur
  */
+
+/**
+ * @swagger
+ * /api/qrcodes/update:
+ *   post:
+ *     summary: Mettre à jour le QR Code de l'utilisateur
+ *     tags: [QR Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               qr_code:
+ *                 type: string
+ *                 example: "QR654321"
+ *     responses:
+ *       200:
+ *         description: QR Code mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "QR Code mis à jour avec succès"
+ *       400:
+ *         description: "QR Code requis ou non valide"
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post("/update", authMiddleware, async (req, res) => {
+    try {
+        const { qr_code } = req.body;
+        if (!qr_code) {
+            return res.status(400).json({ message: "Le QR Code est requis." });
+        }
+        // Update the existing QR code for the user
+        const [result] = await db.query("UPDATE qr_codes SET qr_data = ? WHERE user_id = ?", [qr_code, req.user.user_id]);
+        // If no row was affected, perhaps the user did not have a QR code yet
+        if (result.affectedRows === 0) {
+            // Optionally insert if not exists:
+            await db.query("INSERT INTO qr_codes (user_id, qr_data) VALUES (?, ?)", [req.user.user_id, qr_code]);
+        }
+        res.json({ message: "QR Code mis à jour avec succès" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post("/validate", authMiddleware, async (req, res) => {
     try {
         const { qr_code } = req.body;

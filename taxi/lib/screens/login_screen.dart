@@ -74,18 +74,42 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, Routes.passengerHome);
         }
       } else {
-        // Display error message from API response
-        final String msg = response.data["message"] ?? "Login failed.";
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(msg)));
+        // If the API returns an error (e.g., 401), show a beautiful dialog prompting re-entry.
+        _showRetryDialog(response.data["message"] ?? "Identifiant ou mot de passe incorrect. Veuillez réessayer.");
       }
-    } catch (e) {
+    } on DioError catch (e) {
       // Handle network or other errors
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Login failed: ${e.toString()}")));
+      String errorMsg = "Login failed: ${e.response?.data["message"] ?? e.toString()}";
+      _showRetryDialog(errorMsg);
+    } catch (e) {
+      _showRetryDialog("Login failed: ${e.toString()}");
     } finally {
       setState(() => isLoading = false);
     }
+  }
+
+  /// Displays a dialog with a custom error message and a button to let the user try again.
+  Future<void> _showRetryDialog(String message) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          "Erreur d'authentification",
+          style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Réessayer", style: TextStyle(fontSize: 16)),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      ),
+    );
   }
 
   /// Build a generic text field widget
@@ -123,8 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
             isPasswordVisible ? Icons.visibility : Icons.visibility_off,
             color: AppTheme.primaryColor,
           ),
-          onPressed: () =>
-              setState(() => isPasswordVisible = !isPasswordVisible),
+          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
         ),
         hintText: "Password",
         errorText: passwordError,
@@ -218,8 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacementNamed(
-                            context, Routes.signUpScreen);
+                        Navigator.pushReplacementNamed(context, Routes.signUpScreen);
                       },
                       child: const Text(
                         "Sign Up",
