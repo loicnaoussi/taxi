@@ -166,6 +166,7 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
             filename: _selectedImageFile!.path.split('/').last,
           )
         });
+        // ignore: unused_local_variable
         final resp = await Dio().post(
           "http://votre-backend/api/users/upload-photo",
           data: formData,
@@ -184,6 +185,7 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
         // etc.
       };
 
+      // ignore: unused_local_variable
       final updateResp = await Dio().put(
         "http://votre-backend/api/auth/update",
         data: updateData,
