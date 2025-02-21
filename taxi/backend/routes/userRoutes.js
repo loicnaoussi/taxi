@@ -5,13 +5,13 @@ const db = require("../config/db");
 const multer = require("multer");
 const fs = require("fs");
 
-// 📌 Vérifie si le dossier `uploads/` existe, sinon le créer
+// 📌 Ensure the uploads folder exists
 const uploadDir = "uploads/";
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// 📌 Configuration du stockage des fichiers avec validation
+// 📌 Configure file storage for uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, uploadDir);
@@ -22,60 +22,46 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 🔹 Limite à 5MB
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith("image/")) {
             req.fileValidationError = "Seuls les fichiers images sont autorisés !";
-            return cb(null, false); // ⚠️ Ne pas générer une exception, mais signaler l'erreur
+            return cb(null, false);
         }
         cb(null, true);
     },
 });
 
-
-
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     User:
- *       type: object
- *       properties:
- *         user_id:
- *           type: integer
- *         username:
- *           type: string
- *         email:
- *           type: string
- *           format: email
- *         full_name:
- *           type: string
- *         phone_number:
- *           type: string
- *         profile_image_url:
- *           type: string
- *           format: uri
- *         user_type:
- *           type: string
- *           enum: [passenger, driver, admin]
- */
-
 /**
  * @swagger
  * /api/users/profile:
  *   get:
- *     summary: Récupérer les informations du profil
+ *     summary: Récupérer les informations du profil de l'utilisateur connecté
  *     tags: [Utilisateurs]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Informations de l'utilisateur
+ *         description: Informations de l'utilisateur récupérées avec succès
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               type: object
+ *               properties:
+ *                 user_id:
+ *                   type: integer
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 full_name:
+ *                   type: string
+ *                 phone_number:
+ *                   type: string
+ *                 profile_image_url:
+ *                   type: string
+ *                 user_type:
+ *                   type: string
  *       404:
  *         description: Utilisateur non trouvé
  *       500:
@@ -83,27 +69,26 @@ const upload = multer({
  */
 router.get("/profile", authMiddleware, async (req, res) => {
     try {
-        const [user] = await db.query(
+        const [rows] = await db.query(
             "SELECT user_id, username, email, full_name, phone_number, profile_image_url, user_type FROM users WHERE user_id = ?",
             [req.user.user_id]
         );
 
-        if (user.length === 0) {
+        if (rows.length === 0) {
             return res.status(404).json({ message: "Utilisateur non trouvé." });
         }
 
-        res.json(user[0]);
+        res.json(rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-
 /**
  * @swagger
  * /api/users/update:
  *   put:
- *     summary: Mettre à jour les informations utilisateur
+ *     summary: Mettre à jour les informations de l'utilisateur
  *     tags: [Utilisateurs]
  *     security:
  *       - bearerAuth: []
@@ -136,13 +121,13 @@ router.put("/update", authMiddleware, async (req, res) => {
             return res.status(400).json({ message: "Aucune donnée à mettre à jour." });
         }
 
-        // Vérifier si le numéro est déjà utilisé par un autre utilisateur
+        // Verify if phone number is already used by another user
         if (phone_number) {
-            const [existingUsers] = await db.query(
+            const [existing] = await db.query(
                 "SELECT * FROM users WHERE phone_number = ? AND user_id != ?",
                 [phone_number, req.user.user_id]
             );
-            if (existingUsers.length > 0) {
+            if (existing.length > 0) {
                 return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
             }
         }
@@ -186,29 +171,26 @@ router.put("/update", authMiddleware, async (req, res) => {
 router.post("/upload-photo", authMiddleware, upload.single("profile_image"), async (req, res) => {
     try {
         if (req.fileValidationError) {
-            return res.status(400).json({ message: req.fileValidationError }); // ✅ Retourner un 400 proprement
+            return res.status(400).json({ message: req.fileValidationError });
         }
-        
         if (!req.file) {
             return res.status(400).json({ message: "Aucune image envoyée." });
         }
 
-
-        // Récupérer l'ancienne image
+        // Delete old image if exists
         const [user] = await db.query("SELECT profile_image_url FROM users WHERE user_id = ?", [req.user.user_id]);
-
         if (user.length > 0 && user[0].profile_image_url) {
             const oldImagePath = user[0].profile_image_url.split("/uploads/")[1];
             if (oldImagePath && fs.existsSync(`${uploadDir}/${oldImagePath}`)) {
-                fs.unlinkSync(`${uploadDir}/${oldImagePath}`); // 🔥 Supprime l'ancienne image
+                fs.unlinkSync(`${uploadDir}/${oldImagePath}`);
             }
         }
 
-        // Générer le lien complet en local
+        // Generate the full image URL
         const baseUrl = `${req.protocol}://${req.get("host")}`;
         const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
-        // Mettre à jour la BDD avec l'URL complet
+        // Update the database with the new image URL
         await db.query("UPDATE users SET profile_image_url = ? WHERE user_id = ?", [imageUrl, req.user.user_id]);
 
         res.json({ message: "Photo de profil mise à jour avec succès !", profile_image_url: imageUrl });

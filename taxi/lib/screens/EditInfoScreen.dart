@@ -47,7 +47,8 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
         options: Options(headers: {"Authorization": "Bearer $token"}),
       );
       if (response.statusCode == 200) {
-        final data = response.data["user"];
+        // The backend returns the user object directly
+        final data = response.data;
         setState(() {
           _usernameController.text = data["username"] ?? "";
           _fullNameController.text = data["full_name"] ?? "";
@@ -223,7 +224,7 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
       };
 
       await Dio().put(
-        "${Config.baseUrl}/api/auth/update",
+        "${Config.baseUrl}/api/users/update",
         data: updateData,
         options: Options(headers: {"Authorization": "Bearer $token"}),
       );
@@ -448,10 +449,6 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
       margin: const EdgeInsets.only(bottom: 20),
       child: TextFormField(
         controller: controller,
-        style: TextStyle(
-          color: Colors.grey[800],
-          fontWeight: FontWeight.w500,
-        ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: Colors.grey[600]),
