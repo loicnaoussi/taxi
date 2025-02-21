@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/routes/routes.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -8,7 +9,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
@@ -16,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -31,8 +34,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, Routes.roleSelection);
+    // Au bout de 3 secondes, on vérifie le token en base
+    Future.delayed(const Duration(seconds: 3), () async {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final userType = prefs.getString('user_type');
+
+      if (token != null && token.isNotEmpty) {
+        // déjà connecté : on regarde le userType
+        if (userType == 'driver') {
+          Navigator.pushReplacementNamed(context, Routes.driverHome);
+        } else {
+          Navigator.pushReplacementNamed(context, Routes.passengerHome);
+        }
+      } else {
+        // pas de token => on va sur l'écran de login
+        Navigator.pushReplacementNamed(context, Routes.loginScreen);
+      }
     });
   }
 
@@ -46,6 +64,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        // Fond dégradé
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -62,6 +81,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Animation scale du logo
                   AnimatedBuilder(
                     animation: _scaleAnimation,
                     builder: (context, child) => Transform.scale(
@@ -85,6 +105,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 30),
+                  // Animation fade du texte
                   FadeTransition(
                     opacity: _opacityAnimation,
                     child: const Text(
@@ -100,6 +121,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ],
               ),
             ),
+            // Barre de progression
             Positioned(
               bottom: 50,
               left: 0,
@@ -117,6 +139,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ),
               ),
             ),
+            // Version
             Positioned(
               bottom: 20,
               left: 0,

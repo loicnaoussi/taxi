@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:taxi/screens/gps_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/screens/edit_info_screen.dart';
 import 'package:taxi/screens/identification_screen.dart';
 import 'package:taxi/screens/emergency_contacts_screen.dart';
+import 'package:taxi/screens/notifications_screen.dart';
+import 'package:taxi/screens/gps_scan.dart'; // Écran qui affiche la carte/GPS
+import 'package:taxi/screens/qr_scan_screen.dart'; // Écran qui ouvre la caméra pour scanner un QR code
 import 'package:taxi/themes/theme.dart';
+import 'package:taxi/routes/routes.dart';
 
 class PassengerHomeScreen extends StatefulWidget {
   const PassengerHomeScreen({super.key});
@@ -15,17 +19,33 @@ class PassengerHomeScreen extends StatefulWidget {
 class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   int _currentIndex = 0;
 
+  // Liste des pages : index 0 => carte, 1 => EditInfo, 2 => Identification, 3 => Emergency Contacts.
   final List<Widget> _pages = [
-    const GpsScreen(),
+    const GpsScanScreen(),
     const EditInfoScreen(),
     const IdentificationScreen(),
     const EmergencyContactsScreen(),
   ];
 
+  // Navigation du BottomNavigationBar
   void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    setState(() => _currentIndex = index);
+  }
+
+  // Méthode de déconnexion
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_type');
+    Navigator.pushReplacementNamed(context, Routes.loginScreen);
+  }
+
+  // Ouvre l'écran de scan QR qui active la caméra
+  void _openQrScanner() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const QrScanScreen()),
+    );
   }
 
   @override
@@ -33,45 +53,91 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
     return Scaffold(
       body: Column(
         children: [
-          Container(
-            height: 100,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.primaryColor.withOpacity(0.9)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 12,
-                  spreadRadius: 4,
-                )
-              ],
-            ),
-            child: Center(
-              child: Hero(
-                tag: 'app-logo',
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  height: 50,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: _pages[_currentIndex],
-          ),
+          _buildTopHeader(),
+          Expanded(child: _pages[_currentIndex]),
         ],
       ),
       bottomNavigationBar: _buildFancyNavBar(),
     );
   }
 
+  /// Construction de l’en-tête
+  Widget _buildTopHeader() {
+    return Container(
+      height: 100,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor,
+            AppTheme.primaryColor.withOpacity(0.9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            spreadRadius: 4,
+          )
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Avatar de l'utilisateur (placeholder ici)
+            GestureDetector(
+              onTap: () {
+                // Exemple: ouvrir un menu de compte ou modal
+              },
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  size: 28,
+                  color: AppTheme.primaryColor.withOpacity(0.8),
+                ),
+              ),
+            ),
+            const Spacer(),
+            // Logo
+            Image.asset(
+              'assets/images/logo.png',
+              height: 50,
+              fit: BoxFit.contain,
+            ),
+            const Spacer(),
+            // Bouton pour lancer le scanner QR (ouvre QrScanScreen)
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+              tooltip: 'Scanner un QR Code',
+              onPressed: _openQrScanner,
+            ),
+            // Bouton Notifications
+            IconButton(
+              icon: const Icon(Icons.notifications_active, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                );
+              },
+            ),
+            // Bouton Déconnexion
+            IconButton(
+              icon: const Icon(Icons.exit_to_app, color: Colors.white),
+              tooltip: 'Se déconnecter',
+              onPressed: _logout,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// BottomNavigationBar personnalisé
   Widget _buildFancyNavBar() {
     return Container(
       decoration: BoxDecoration(
@@ -121,9 +187,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
         child: Icon(
           icon,
           size: 28,
-          color: _currentIndex == index
-              ? AppTheme.primaryColor
-              : Colors.grey[600],
+          color: _currentIndex == index ? AppTheme.primaryColor : Colors.grey[600],
         ),
       ),
       label: '',

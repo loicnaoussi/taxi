@@ -1,10 +1,10 @@
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:ui';
-import 'dart:math';
 import 'package:flutter/rendering.dart';
 
 class QrCodeScreen extends StatefulWidget {
@@ -26,15 +26,15 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
   }
 
   Future<void> _downloadQrCode() async {
-  try {
-    final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() 
-        as RenderRepaintBoundary?; 
-    if (boundary == null) return;
+    try {
+      final boundary =
+          _repaintBoundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) return;
 
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ImageByteFormat.png);
       final pngBytes = byteData?.buffer.asUint8List();
-
       if (pngBytes == null) return;
 
       final status = await Permission.storage.request();
@@ -45,7 +45,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         _showSnackBar('QR Code saved to gallery');
       }
     } catch (e) {
-      _showSnackBar('Error: ${e.toString()}');
+      _showSnackBar('Error: $e');
     }
   }
 
@@ -55,23 +55,22 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         fileName: 'qr_code_${_random.nextInt(9999)}.png',
         type: FileType.image,
       );
-      
       if (filePath == null) return;
 
-      final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() 
-          as RenderRepaintBoundary?;
+      final boundary =
+          _repaintBoundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return;
 
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ImageByteFormat.png);
       final pngBytes = byteData?.buffer.asUint8List();
-
       if (pngBytes == null) return;
 
       await ImageGallerySaver.saveImage(pngBytes, name: filePath);
       _showSnackBar('QR Code saved successfully');
     } catch (e) {
-      _showSnackBar('Error: ${e.toString()}');
+      _showSnackBar('Error: $e');
     }
   }
 

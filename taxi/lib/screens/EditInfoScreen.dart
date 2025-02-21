@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi/themes/theme.dart';
 
 class EditInfoScreen extends StatefulWidget {
@@ -11,29 +13,70 @@ class EditInfoScreen extends StatefulWidget {
 }
 
 class _EditInfoScreenState extends State<EditInfoScreen> {
+  // Contrôleurs de texte
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+
+  // Contrôleurs contacts d’urgence
   final TextEditingController _emergencyContact1Controller = TextEditingController();
   final TextEditingController _emergencyContact2Controller = TextEditingController();
-  File? _selectedImage;
 
+  File? _selectedImageFile;
+
+  // Pour une meilleure UX, on peut ajouter un booléen d’état de chargement
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  // Chargement des infos utilisateur depuis le backend
+  Future<void> _loadUserInfo() async {
+    // Ex: GET /api/users/profile
+    // Remplacez la logique ici pour peupler _nameController, _phoneController, etc.
+    try {
+      final token = await _getToken();
+      final response = await Dio().get(
+        "http://votre-backend/api/users/profile",
+        options: Options(headers: {
+          "Authorization": "Bearer $token"
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = response.data["user"]; 
+        setState(() {
+          _nameController.text = data["full_name"] ?? "";
+          _phoneController.text = data["phone_number"] ?? "";
+          // etc.
+        });
+      }
+    } catch (e) {
+      // Gérer l’erreur
+    }
+  }
+
+  // Récupération du token
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString("token");
+  }
+
+  // Récupération / prise de la photo
   Future<void> _pickImage(ImageSource source) async {
     try {
       final pickedFile = await ImagePicker().pickImage(source: source);
       if (pickedFile != null) {
         setState(() {
-          _selectedImage = File(pickedFile.path);
+          _selectedImageFile = File(pickedFile.path);
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur: ${e.toString()}'),
-          backgroundColor: Colors.red[800]!,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red[800],
         ),
       );
     }
@@ -108,30 +151,67 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
     );
   }
 
-  void _saveInfo() {
-    // Implémentez la logique de sauvegarde
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
-            Text(
-              'Modifications sauvegardées',
-              style: TextStyle(
-                color: Colors.grey[100],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+  // Enregistrement des infos
+  Future<void> _saveInfo() async {
+    setState(() => isLoading = true);
+
+    try {
+      final token = await _getToken();
+
+      // 1) Uploader l'image si besoin
+      if (_selectedImageFile != null) {
+        final formData = FormData.fromMap({
+          "profile_image": await MultipartFile.fromFile(
+            _selectedImageFile!.path,
+            filename: _selectedImageFile!.path.split('/').last,
+          )
+        });
+        final resp = await Dio().post(
+          "http://votre-backend/api/users/upload-photo",
+          data: formData,
+          options: Options(headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "multipart/form-data"
+          }),
+        );
+        // Gérer la réponse...
+      }
+
+      // 2) Mise à jour du nom, téléphone, contacts d’urgence
+      final updateData = {
+        "full_name": _nameController.text.trim(),
+        "phone_number": _phoneController.text.trim(),
+        // etc.
+      };
+
+      final updateResp = await Dio().put(
+        "http://votre-backend/api/auth/update",
+        data: updateData,
+        options: Options(headers: {
+          "Authorization": "Bearer $token"
+        }),
+      );
+      // Gérer la réponse...
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Modifications sauvegardées', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          backgroundColor: Colors.green[700],
         ),
-        backgroundColor: Colors.green[700],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -167,7 +247,7 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
         icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
-      title: Text(
+      title: const Text(
         'Modifier le profil',
         style: TextStyle(
           color: Colors.white,
@@ -200,13 +280,9 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
                   color: Colors.grey[200],
                   child: InkWell(
                     onTap: _showImageSourceDialog,
-                    child: _selectedImage != null
-                        ? Image.file(_selectedImage!, fit: BoxFit.cover)
-                        : Icon(
-                            Icons.person_rounded,
-                            size: 50,
-                            color: Colors.grey[500],
-                          ),
+                    child: _selectedImageFile != null
+                        ? Image.file(_selectedImageFile!, fit: BoxFit.cover)
+                        : Icon(Icons.person_rounded, size: 50, color: Colors.grey[500]),
                   ),
                 ),
               ),
@@ -362,8 +438,10 @@ class _EditInfoScreenState extends State<EditInfoScreen> {
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: const Icon(Icons.save_rounded, size: 24),
-        label: const Text('ENREGISTRER LES CHANGEMENTS'),
-        onPressed: _saveInfo,
+        label: isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text('ENREGISTRER LES CHANGEMENTS'),
+        onPressed: isLoading ? null : _saveInfo,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,

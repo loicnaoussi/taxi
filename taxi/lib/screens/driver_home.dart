@@ -1,10 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:taxi/themes/theme.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taxi/routes/routes.dart';
 import 'package:taxi/screens/QrCodeScreen.dart';
 import 'package:taxi/screens/EditInfoScreen.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:taxi/screens/notifications_screen.dart'; // si vous avez un écran de notifications
+import 'package:taxi/themes/theme.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -22,10 +26,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     const VerificationScreen(),
   ];
 
+  // Quand on tape sur un des items du BottomNav
   void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    setState(() => _currentIndex = index);
+  }
+
+  // Fonction de déconnexion
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_type');
+    // Rediriger l’utilisateur vers login
+    Navigator.pushReplacementNamed(context, Routes.loginScreen);
   }
 
   @override
@@ -67,11 +79,20 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       ),
       title: Row(
         children: [
-          Image.asset(
-            'assets/images/logo.png',
-            height: 40,
-            width: 40,
-            fit: BoxFit.contain,
+          // Avatar
+          GestureDetector(
+            onTap: () {
+              // Ouvrir un menu compte ?
+            },
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.person,
+                size: 24,
+                color: AppTheme.primaryColor.withOpacity(0.8),
+              ),
+            ),
           ),
           const SizedBox(width: 15),
           Column(
@@ -101,9 +122,20 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       centerTitle: false,
       actions: [
         IconButton(
-          icon: Icon(Icons.notifications_active,
-              color: Colors.white.withOpacity(0.9)),
-          onPressed: () {},
+          icon: const Icon(Icons.notifications_active, color: Colors.white),
+          onPressed: () {
+            // Aller sur la page notifications
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+            );
+          },
+        ),
+        // Bouton de logout
+        IconButton(
+          icon: const Icon(Icons.exit_to_app, color: Colors.white),
+          tooltip: 'Se déconnecter',
+          onPressed: _logout,
         ),
       ],
     );
@@ -179,6 +211,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// DriverCodeScreen : code de sécurité
+// ---------------------------------------------------------------------------
 class DriverCodeScreen extends StatefulWidget {
   const DriverCodeScreen({super.key});
 
@@ -187,57 +222,151 @@ class DriverCodeScreen extends StatefulWidget {
 }
 
 class _DriverCodeScreenState extends State<DriverCodeScreen> {
-  String _code = '748588';
+  String? _code;
   bool _isCodeVisible = false;
   final _passwordController = TextEditingController();
-  final _storedPassword = "1234";
+
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _fetchSecurityCode();
+
+    // On rafraîchit le code toutes les 2h
+    _refreshTimer = Timer.periodic(const Duration(hours: 2), (timer) {
+      _fetchSecurityCode();
+    });
   }
 
   @override
   void dispose() {
     _passwordController.dispose();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
-  void _startTimer() {}
-  void _toggleCodeVisibility() async {
-    final result = await showDialog(
-      context: context,
-      builder: (context) => _buildPasswordDialog(),
-    );
-
-    if (result == true) {
-      setState(() => _isCodeVisible = true);
-      await Future.delayed(Duration(seconds: 30), () {
-        if (mounted) setState(() => _isCodeVisible = false);
-      });
+  Future<void> _fetchSecurityCode() async {
+    try {
+      final token = await _getToken();
+      final response = await Dio().get(
+        "http://192.168.1.158:5000/api/auth/security-code",
+        options: Options(headers: {
+          "Authorization": "Bearer $token",
+        }),
+      );
+      if (response.statusCode == 200 && response.data["code"] != null) {
+        setState(() => _code = response.data["code"]);
+      } else {
+        setState(() => _code = "------");
+      }
+    } catch (e) {
+      setState(() => _code = "Erreur");
     }
   }
 
- void _shareTripDetails() async {
-  
-    final bool confirmShare = await showDialog(
+  Future<bool> _checkPassword(String password) async {
+    try {
+      final token = await _getToken();
+      final response = await Dio().post(
+        "http://192.168.1.158:5000/api/auth/check-password",
+        data: {"password": password},
+        options: Options(headers: {
+          "Authorization": "Bearer $token",
+        }),
+      );
+      if (response.statusCode == 200) {
+        return response.data["valid"] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  Future<void> _toggleCodeVisibility() async {
+    final bool success = await _showPasswordDialog();
+    if (!success) return;
+
+    setState(() => _isCodeVisible = true);
+    await Future.delayed(const Duration(seconds: 30), () {
+      if (mounted) setState(() => _isCodeVisible = false);
+    });
+  }
+
+  Future<bool> _showPasswordDialog() async {
+    _passwordController.clear();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Authentification Requise',
+          style: TextStyle(color: AppTheme.primaryColor),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Mot de passe',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                suffixIcon: const Icon(Icons.lock),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final valid = await _checkPassword(_passwordController.text);
+                    if (!valid) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mot de passe incorrect')),
+                      );
+                      return;
+                    }
+                    Navigator.pop(context, true);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text('Confirmer'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    return result == true;
+  }
+
+  Future<void> _shareTripDetails() async {
+    final bool? confirmShare = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer le partage'),
-        content: const Text(
-          'Voulez-vous vraiment partager les informations du trajet ?',
-        ),
+        content: const Text('Voulez-vous partager les informations du trajet ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Annuler'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-            ),
             child: const Text('Confirmer'),
           ),
         ],
@@ -245,49 +374,106 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     );
 
     if (confirmShare == true) {
-      final String driverName = "Jean Dupont";
-      final String passengerName = "Marie Curie";
-      final String departureLocation = "Paris, France";
-      final String destination = "Lyon, France";
+      final driverName = "Jean Dupont";
+      final passengerName = "Marie Curie";
+      final departureLocation = "Paris, France";
+      final destination = "Lyon, France";
 
-      final String shareMessage = """
-            🚖 Informations du trajet :
+      final shareMessage = """
+🚖 Informations du trajet :
 
-            Conducteur : $driverName
-            Passager : $passengerName
-            Départ : $departureLocation
-            Destination : $destination
+Conducteur : $driverName
+Passager : $passengerName
+Départ : $departureLocation
+Destination : $destination
 
-            Partagez ce trajet avec un autre utilisateur !
-            """;
-
+Partagez ce trajet avec un autre utilisateur !
+""";
       Share.share(shareMessage);
     }
   }
 
+  void _showEmergencyDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Emergency Alert'),
+        content: const Text('Are you sure you want to send an emergency alert?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _sendEmergencyAlert();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendEmergencyAlert() async {
+    try {
+      final token = await _getToken();
+      final response = await Dio().post(
+        "http://192.168.1.158:5000/api/verifications/emergency-alert",
+        options: Options(headers: {
+          "Authorization": "Bearer $token",
+        }),
+      );
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Emergency alert sent!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Emergency alert failed!')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Network error: $e')),
+      );
+    }
+  }
+
+  void _navigateToProfileEdit() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EditInfoScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final displayedCode = _code ?? "------";
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
           colors: [
             AppTheme.primaryColor.withOpacity(0.1),
             Colors.white,
           ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            _buildCodeCard(),
+          children: [
+            _buildCodeCard(displayedCode),
             const SizedBox(height: 40),
             _buildActionButton(
               icon: Icons.warning_amber_rounded,
               text: 'Emergency Alert',
-              onPressed: () => _showEmergencyDialog(),
+              onPressed: _showEmergencyDialog,
             ),
             const SizedBox(height: 20),
             _buildActionButton(
@@ -296,7 +482,6 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
               onPressed: _navigateToProfileEdit,
             ),
             const SizedBox(height: 20),
-            // Nouveau bouton de partage
             _buildActionButton(
               icon: Icons.share,
               text: 'Share Trip',
@@ -308,58 +493,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     );
   }
 
-  Widget _buildPasswordDialog() {
-    return AlertDialog(
-      title: Text('Authentification Requise',
-          style: TextStyle(color: AppTheme.primaryColor)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _passwordController,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: 'Mot de passe',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              suffixIcon: Icon(Icons.lock),
-            ),
-          ),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('Annuler'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_passwordController.text == _storedPassword) {
-                    Navigator.pop(context, true);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Mot de passe incorrect')),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('Confirmer'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCodeCard() {
+  Widget _buildCodeCard(String displayedCode) {
     return GestureDetector(
       onTap: _toggleCodeVisibility,
       child: Container(
@@ -377,7 +511,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
         ),
         child: Column(
           children: [
-            Text(
+            const Text(
               'Code Sécurité',
               style: TextStyle(
                 fontSize: 18,
@@ -385,10 +519,10 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             _isCodeVisible
                 ? Text(
-                    _code,
+                    displayedCode,
                     style: TextStyle(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
@@ -399,9 +533,9 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      6,
+                      displayedCode.length,
                       (index) => Container(
-                        margin: EdgeInsets.symmetric(horizontal: 8),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
                         width: 20,
                         height: 20,
                         decoration: BoxDecoration(
@@ -411,7 +545,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
                       ),
                     ),
                   ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Icon(
               _isCodeVisible ? Icons.visibility_off : Icons.visibility,
               color: Colors.grey,
@@ -422,10 +556,11 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     );
   }
 
-  Widget _buildActionButton(
-      {required IconData icon,
-      required String text,
-      required VoidCallback onPressed}) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required String text,
+    required VoidCallback onPressed,
+  }) {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.7,
       child: ElevatedButton.icon(
@@ -438,7 +573,9 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
-            side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.3)),
+            side: BorderSide(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+            ),
           ),
           elevation: 3,
           textStyle: const TextStyle(
@@ -449,47 +586,11 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
       ),
     );
   }
-
-  void _showEmergencyDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Emergency Alert'),
-        content: const Text(
-            'Are you sure you want to send an emergency alert to authorities?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Implement emergency alert
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Emergency alert sent!')),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _navigateToProfileEdit() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const EditInfoScreen(),
-      ),
-    );
-  }
 }
 
+// ---------------------------------------------------------------------------
+// VerificationScreen : upload documents
+// ---------------------------------------------------------------------------
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
 
@@ -506,22 +607,65 @@ class _VerificationScreenState extends State<VerificationScreen> {
   };
 
   Future<void> _pickFile(String fileType) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null && result.files.single.path != null) {
       setState(() {
-        _files[fileType] = result.files.single.name;
+        _files[fileType] = result.files.single.path;
       });
     }
   }
 
-  void _submitVerification() {
+  Future<void> _submitVerification() async {
     if (_files.values.any((v) => v == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload all required files')),
       );
       return;
     }
-    // Submit implementation
+
+    try {
+      final token = await _getToken();
+      final dio = Dio();
+
+      // envoi un par un
+      for (final entry in _files.entries) {
+        final key = entry.key;
+        final path = entry.value!;
+        final formData = FormData.fromMap({
+          key: await MultipartFile.fromFile(
+            path,
+            filename: path.split('/').last,
+          ),
+        });
+
+        final response = await dio.post(
+          "http://192.168.1.158:5000/api/verifications/upload-verification",
+          data: formData,
+          options: Options(
+            headers: {
+              "Authorization": "Bearer $token",
+              "Content-Type": "multipart/form-data",
+            },
+          ),
+        );
+        if (response.statusCode != 201) {
+          // Gérer l'erreur si besoin
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Documents submitted successfully!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload error: $e')),
+      );
+    }
+  }
+
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
   }
 
   @override
@@ -586,10 +730,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
     ];
   }
 
-  Widget _buildUploadCard(
-      {required String title,
-      required IconData icon,
-      required String fileType}) {
+  Widget _buildUploadCard({
+    required String title,
+    required IconData icon,
+    required String fileType,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -640,8 +785,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child:
-                Text(_files[fileType] == null ? 'Upload File' : 'Change File'),
+            child: Text(
+              _files[fileType] == null ? 'Upload File' : 'Change File',
+            ),
           ),
         ],
       ),

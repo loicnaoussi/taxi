@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:taxi/themes/theme.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:taxi/themes/theme.dart';
 
 class GpsScreen extends StatefulWidget {
   const GpsScreen({super.key});
@@ -24,7 +24,11 @@ class _GpsScreenState extends State<GpsScreen> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse) return;
+      if (permission != LocationPermission.whileInUse &&
+          permission != LocationPermission.always) {
+        // L’utilisateur refuse la permission
+        return;
+      }
     }
     _getCurrentLocation();
   }
@@ -34,7 +38,6 @@ class _GpsScreenState extends State<GpsScreen> {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
       setState(() {
         _currentAddress = _formatPosition(position);
       });
@@ -47,8 +50,8 @@ class _GpsScreenState extends State<GpsScreen> {
     return '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
   }
 
- void _shareTripDetails() async {
-    final bool confirmShare = await showDialog(
+  Future<void> _shareTripDetails() async {
+    final bool? confirmShare = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer le partage'),
@@ -62,9 +65,7 @@ class _GpsScreenState extends State<GpsScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             child: const Text('Confirmer'),
           ),
         ],
@@ -78,15 +79,15 @@ class _GpsScreenState extends State<GpsScreen> {
       final String destination = "Lyon, France";
 
       final String shareMessage = """
-            🚖 Informations du trajet :
+🚖 Informations du trajet :
 
-            Conducteur : $driverName
-            Passager : $passengerName
-            Départ : $departureLocation
-            Destination : $destination
+Conducteur : $driverName
+Passager : $passengerName
+Départ : $departureLocation
+Destination : $destination
 
-            Partagez ce trajet avec un autre utilisateur !
-            """;
+Partagez ce trajet avec un autre utilisateur !
+""";
 
       Share.share(shareMessage);
     }
@@ -107,69 +108,6 @@ class _GpsScreenState extends State<GpsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMapPlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withOpacity(0.7),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(30.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.travel_explore, size: 100, color: Colors.white),
-              const SizedBox(height: 40),
-              const Text(
-                'Carte en Cours de Développement',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Nous travaillons activement sur une intégration cartographique premium !\n'
-                'Disponible très prochainement dans une prochaine mise à jour.',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 16,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.notifications_active, size: 20),
-                label: const Text('Activer les notifications'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                  backgroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 25, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                onPressed: () {},
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -225,6 +163,70 @@ class _GpsScreenState extends State<GpsScreen> {
     );
   }
 
+  Widget _buildMapPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor,
+            AppTheme.primaryColor.withOpacity(0.7),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.travel_explore, size: 100, color: Colors.white),
+              const SizedBox(height: 40),
+              const Text(
+                'Carte en Cours de Développement',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Nous travaillons sur une intégration cartographique premium.\n'
+                'Disponible très bientôt dans une prochaine mise à jour.',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.notifications_active, size: 20),
+                label: const Text('Activer les notifications'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () {
+                  // Activer les notifications
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFloatingButtons() {
     return Positioned(
       right: 15,
@@ -252,13 +254,13 @@ class _GpsScreenState extends State<GpsScreen> {
           _buildMapButton(
             icon: Icons.zoom_in,
             color: Colors.grey[800]!,
-            onPressed: () => _showFeatureNotification('Zoom'),
+            onPressed: () => _showFeatureNotification('Zoom In'),
           ),
           const SizedBox(height: 10),
           _buildMapButton(
             icon: Icons.zoom_out,
             color: Colors.grey[800]!,
-            onPressed: () => _showFeatureNotification('Zoom'),
+            onPressed: () => _showFeatureNotification('Zoom Out'),
           ),
         ],
       ),
@@ -290,13 +292,13 @@ class _GpsScreenState extends State<GpsScreen> {
   }
 
   void _scanQrCode() {
-    _showFeatureNotification('Scanner QR');
+    _showFeatureNotification('Scanner le QR code');
   }
 
   void _showFeatureNotification(String featureName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$featureName sera disponible avec la nouvelle carte !'),
+        content: Text('$featureName sera disponible dans la nouvelle carte !'),
         backgroundColor: AppTheme.primaryColor,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
@@ -323,10 +325,7 @@ class _GpsScreenState extends State<GpsScreen> {
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Alerte envoyée !'),
-                  backgroundColor: Colors.red,
-                ),
+                const SnackBar(content: Text('Alerte envoyée !'), backgroundColor: Colors.red),
               );
             },
             child: const Text('Confirmer'),

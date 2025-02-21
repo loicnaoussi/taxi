@@ -16,6 +16,14 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
     'card': null,
   };
 
+  Future<void> _pickFile(String fileType) async {
+    // ICI: Sélecteur de fichier => ex. FilePicker
+    setState(() {
+      _uploads[fileType] =
+          'fichier_selectionné.${fileType == 'video' ? 'mp4' : 'jpg'}';
+    });
+  }
+
   void _submitVerification() {
     if (_uploads.values.any((v) => v == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -23,14 +31,7 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
       );
       return;
     }
-    // Implémenter la soumission
-  }
-
-  Future<void> _pickFile(String fileType) async {
-    // Implémenter le sélecteur de fichier
-    setState(() {
-      _uploads[fileType] = 'fichier_selectionné.${fileType == 'video' ? 'mp4' : 'jpg'}';
-    });
+    // Logique de soumission => ex: POST /api/verifications/upload-verification
   }
 
   @override
@@ -40,9 +41,7 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
         title: const Text('Vérification Identité'),
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
       ),
       body: SingleChildScrollView(
@@ -89,28 +88,25 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
   }
 
   Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Vérification de sécurité',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
-          ),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(
+        'Vérification de sécurité',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
         ),
-        const SizedBox(height: 10),
-        Text(
-          'Veuillez fournir les documents suivants pour compléter votre vérification',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-            height: 1.4,
-          ),
+      ),
+      const SizedBox(height: 10),
+      Text(
+        'Veuillez fournir les documents suivants pour compléter votre vérification',
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.grey[600],
+          height: 1.4,
         ),
-      ],
-    );
+      ),
+    ]);
   }
 
   Widget _buildUploadCard({
@@ -165,21 +161,21 @@ class _IdentificationScreenState extends State<IdentificationScreen> {
                         _uploads[fileType] ?? subtitle,
                         style: TextStyle(
                           fontSize: 14,
-                          color: _uploads[fileType] != null 
-                             ? Colors.grey[800] 
-                             : Colors.grey[600],
-                          fontStyle: _uploads[fileType] != null 
-                             ? FontStyle.italic 
-                             : FontStyle.normal,
+                          color: _uploads[fileType] != null
+                              ? Colors.grey[800]
+                              : Colors.grey[600],
+                          fontStyle: _uploads[fileType] != null
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Icon(
-                  _uploads[fileType] != null 
-                     ? Icons.check_circle_rounded 
-                     : Icons.upload_rounded,
+                  _uploads[fileType] != null
+                      ? Icons.check_circle_rounded
+                      : Icons.upload_rounded,
                   color: _uploads[fileType] != null ? Colors.green : color,
                 ),
               ],

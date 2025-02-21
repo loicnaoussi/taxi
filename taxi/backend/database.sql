@@ -1,140 +1,164 @@
-const request = require("supertest");
-const { app, server } = require("../server");
-const db = require("../config/db");
-const fs = require("fs");
-const path = require("path");
+-- 📌 Création de la base de données principale
+CREATE DATABASE IF NOT EXISTS taxi_app;
+USE taxi_app;
 
-jest.setTimeout(30000); // ⏳ Augmenter le timeout global
+-- 📌 Table des utilisateurs
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(20) UNIQUE NOT NULL,
+    profile_image_url VARCHAR(255),
+    user_type ENUM('driver', 'passenger', 'admin') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-let driverToken;
-let testDriverId;
-let testVehicleId;
+-- 📌 Table des localisations en temps réel (Corrigée)
+CREATE TABLE IF NOT EXISTS user_location (
+    location_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    latitude DECIMAL(9,6) NOT NULL DEFAULT 0.000000,
+    longitude DECIMAL(9,6) NOT NULL DEFAULT 0.000000,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
-beforeAll(async () => {
-    console.log("🔹 Suppression des anciens chauffeurs et véhicules de test...");
-    await db.query("DELETE FROM vehicles WHERE driver_id IN (SELECT user_id FROM users WHERE email LIKE 'testdriver%')");
-    await db.query("DELETE FROM users WHERE email LIKE 'testdriver%'");
-    console.log("✅ Suppression terminée !");
+-- 📌 Trigger pour insérer une localisation par défaut à la création d’un utilisateur (Corrigé)
+DELIMITER //
+CREATE TRIGGER after_user_insert
+AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+    INSERT INTO user_location (user_id, latitude, longitude, last_updated)
+    VALUES (NEW.user_id, 0.000000, 0.000000, NOW())
+    ON DUPLICATE KEY UPDATE last_updated = NOW();
+END;
+//
+DELIMITER ;
 
-    // ✅ Inscription du chauffeur
-    const resRegister = await request(app)
-        .post("/api/auth/register")
-        .send({
-            username: "testdriver",
-            email: "testdriver@example.com",
-            phone_number: "0611122334",
-            password: "password123",
-            full_name: "Test Driver",
-            user_type: "driver"
-        });
+-- 📌 Table des véhicules (chauffeurs uniquement)
+CREATE TABLE IF NOT EXISTS vehicles (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    driver_id INT NOT NULL,
+    marque VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year INT CHECK (year >= 2000),
+    license_plate VARCHAR(20) UNIQUE NOT NULL,
+    immatriculation VARCHAR(20) UNIQUE NOT NULL,
+    couleur VARCHAR(20) NOT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    carte_grise VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
-    console.log("🔹 Réponse inscription chauffeur :", resRegister.body);
-    expect(resRegister.statusCode).toBe(201);
+-- 📌 Table des trajets (rides) (Corrigée)
+CREATE TABLE IF NOT EXISTS rides (
+    ride_id INT AUTO_INCREMENT PRIMARY KEY,
+    passenger_id INT NOT NULL,
+    driver_id INT,
+    vehicle_id INT,
+    pickup_location VARCHAR(255) NOT NULL,
+    dropoff_location VARCHAR(255) NOT NULL,
+    pickup_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    dropoff_time DATETIME NULL,
+    status ENUM('requested', 'accepted', 'in_progress', 'completed', 'canceled') DEFAULT 'requested',
+    fare DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (passenger_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE SET NULL
+);
 
-    // ✅ Connexion du chauffeur
-    const resLogin = await request(app)
-        .post("/api/auth/login")
-        .send({
-            identifier: "testdriver@example.com",
-            password: "password123"
-        });
+-- 📌 Table des paiements
+CREATE TABLE IF NOT EXISTS payments (
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    ride_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    payment_method ENUM('cash', 'credit_card', 'mobile_payment') NOT NULL,
+    payment_status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    transaction_id VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
+);
 
-    console.log("🔹 Réponse connexion chauffeur :", resLogin.body);
-    expect(resLogin.statusCode).toBe(200);
-    driverToken = resLogin.body.accessToken;
-    testDriverId = resLogin.body.user.user_id;
-});
+-- 📌 Table des notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
-describe("🚗 Gestion des véhicules", () => {
-    
-    test("✅ Ajout d’un véhicule", async () => {
-        const carteGrisePath = path.join(__dirname, "test-files/test_carte_grise.jpg");
-        if (!fs.existsSync(carteGrisePath)) {
-            fs.writeFileSync(carteGrisePath, "fake_image_content");
-        }
 
-        const res = await request(app)
-            .post("/api/vehicles/add")
-            .set("Authorization", `Bearer ${driverToken}`)
-            .field("marque", "Toyota")
-            .field("model", "Corolla")
-            .field("year", "2021")
-            .field("license_plate", "XYZ-123")
-            .field("couleur", "Noir")
-            .field("immatriculation", "123456789")
-            .attach("carte_grise", carteGrisePath);
+-- 📌 Table des QR Codes (identification des utilisateurs)
+CREATE TABLE IF NOT EXISTS qr_codes (
+    qr_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    qr_data VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
-        console.log("🔹 Réponse ajout véhicule :", res.body);
-        expect(res.statusCode).toBe(201);
-        testVehicleId = res.body.vehicle_id;
-        expect(testVehicleId).toBeDefined();
-    });
+-- 📌 Table des contacts d’urgence
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+    contact_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    contact_name VARCHAR(100) NOT NULL,
+    contact_phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
-    test("✅ Récupérer les véhicules d'un chauffeur", async () => {
-        const res = await request(app)
-            .get("/api/vehicles/my-vehicles")
-            .set("Authorization", `Bearer ${driverToken}`);
+-- 📌 Table des signalements et réclamations (Corrigée)
+CREATE TABLE IF NOT EXISTS issue_reports (
+    report_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    ride_id INT NOT NULL,
+    issue_type VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
+);
 
-        console.log("🔹 Réponse récupération véhicules :", res.body);
-        expect(res.statusCode).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
-        expect(res.body.length).toBeGreaterThan(0);
-    });
+-- 📌 Table des vérifications (Corrigée)
+CREATE TABLE IF NOT EXISTS verifications (
+    verification_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    verification_video VARCHAR(255) NOT NULL,
+    cni_front VARCHAR(255) NOT NULL,
+    cni_back VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
-    test("✅ Modifier un véhicule", async () => {
-        expect(testVehicleId).toBeDefined();
+-- 📌 Table des historiques (Corrigée)
+CREATE TABLE IF NOT EXISTS history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    ride_id INT,
+    action_type VARCHAR(255) NOT NULL,
+    details TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE
+);
 
-        const res = await request(app)
-            .put(`/api/vehicles/edit-vehicle/${testVehicleId}`)
-            .set("Authorization", `Bearer ${driverToken}`)
-            .send({ couleur: "Rouge" });
-
-        console.log("🔹 Réponse modification véhicule :", res.body);
-        expect(res.statusCode).toBe(200);
-        expect(res.body.message).toBe("Véhicule mis à jour avec succès.");
-    });
-
-    test("🚫 Essayer de modifier un véhicule inexistant (404)", async () => {
-        const res = await request(app)
-            .put(`/api/vehicles/edit-vehicle/9999999`)
-            .set("Authorization", `Bearer ${driverToken}`)
-            .send({ couleur: "Bleu" });
-
-        console.log("🔹 Réponse modification véhicule inexistant :", res.body);
-        expect(res.statusCode).toBe(404);
-        expect(res.body.message).toBe("Véhicule non trouvé.");
-    });
-
-    test("✅ Supprimer un véhicule", async () => {
-        expect(testVehicleId).toBeDefined();
-
-        const res = await request(app)
-            .delete(`/api/vehicles/delete-vehicle/${testVehicleId}`)
-            .set("Authorization", `Bearer ${driverToken}`);
-
-        console.log("🔹 Réponse suppression véhicule :", res.body);
-        expect(res.statusCode).toBe(200);
-        expect(res.body.message).toBe("Véhicule supprimé avec succès.");
-    });
-
-    test("🚫 Essayer de supprimer un véhicule inexistant (404)", async () => {
-        const res = await request(app)
-            .delete(`/api/vehicles/delete-vehicle/9999999`)
-            .set("Authorization", `Bearer ${driverToken}`);
-
-        console.log("🔹 Réponse suppression véhicule inexistant :", res.body);
-        expect(res.statusCode).toBe(404);
-        expect(res.body.message).toBe("Véhicule non trouvé.");
-    });
-});
-
-afterAll(async () => {
-    console.log("🔹 Suppression des données de test...");
-    await db.query("DELETE FROM vehicles WHERE driver_id = ?", [testDriverId]);
-    await db.query("DELETE FROM users WHERE user_id = ?", [testDriverId]);
-
-    console.log("🔹 Fermeture du serveur...");
-    await db.end(); // 🛑 Ferme la connexion MySQL proprement
-    server.close();
-    console.log("✅ Serveur et connexion à la base de données fermés !");
-});
+CREATE TABLE IF NOT EXISTS reviews (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    ride_id INT NOT NULL,
+    reviewer_id INT NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ride_id) REFERENCES rides(ride_id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewer_id) REFERENCES users(user_id) ON DELETE CASCADE
+);

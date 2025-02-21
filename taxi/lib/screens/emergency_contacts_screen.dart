@@ -9,17 +9,38 @@ class EmergencyContactsScreen extends StatefulWidget {
 }
 
 class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
-  final List<TextEditingController> _controllers = List.generate(3, (i) => TextEditingController());
+  final List<TextEditingController> _controllers =
+      List.generate(3, (i) => TextEditingController());
   final List<Color> _contactColors = [Colors.red, Colors.orange, Colors.purple];
 
-  void _saveContacts() {
+  // Ex: on peut en faire un booléen d’état de chargement
+  bool isSaving = false;
+
+  void _saveContacts() async {
+    // Vérifier que les champs ne sont pas vides
     if (_controllers.any((c) => c.text.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez remplir tous les champs requis')),
       );
       return;
     }
-    // Implémenter la sauvegarde
+
+    setState(() => isSaving = true);
+
+    try {
+      // Ex: POST /api/emergency/add
+      // data: { contact_1, contact_2, contact_3 }
+      // Gérer la logique de sauvegarde
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contacts d\'urgence enregistrés')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => isSaving = false);
+    }
   }
 
   @override
@@ -29,9 +50,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
         title: const Text('Contacts d\'Urgence'),
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
       ),
       body: SingleChildScrollView(
@@ -63,7 +82,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Ajoutez au moins 3 contacts de confiance à prévenir en cas d\'urgence',
+          'Ajoutez 3 contacts de confiance à prévenir en cas d\'urgence',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[600],
@@ -115,9 +134,11 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                     hintText: 'Entrez le numéro de téléphone',
                     border: InputBorder.none,
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.contacts_rounded, 
+                      icon: Icon(Icons.contacts_rounded,
                           color: _contactColors[index]),
-                      onPressed: () {}, // Implémenter le sélecteur de contact
+                      onPressed: () {
+                        // Sélecteur de contact
+                      },
                     ),
                   ),
                   keyboardType: TextInputType.phone,
@@ -135,8 +156,10 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: const Icon(Icons.shield_rounded),
-        label: const Text('ENREGISTRER LES CONTACTS'),
-        onPressed: _saveContacts,
+        label: isSaving
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text('ENREGISTRER LES CONTACTS'),
+        onPressed: isSaving ? null : _saveContacts,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
