@@ -9,6 +9,7 @@ import 'package:taxi/screens/QrCodeScreen.dart';
 import 'package:taxi/screens/EditInfoScreen.dart';
 import 'package:taxi/screens/notifications_screen.dart'; // si vous avez un écran de notifications
 import 'package:taxi/themes/theme.dart';
+import 'package:taxi/config.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -250,7 +251,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     try {
       final token = await _getToken();
       final response = await Dio().get(
-        "http://192.168.1.158:5000/api/auth/security-code",
+        "${Config.baseUrl}/api/auth/security-code",
         options: Options(headers: {
           "Authorization": "Bearer $token",
         }),
@@ -269,7 +270,7 @@ class _DriverCodeScreenState extends State<DriverCodeScreen> {
     try {
       final token = await _getToken();
       final response = await Dio().post(
-        "http://192.168.1.158:5000/api/auth/check-password",
+        "${Config.baseUrl}/api/auth/check-password",
         data: {"password": password},
         options: Options(headers: {
           "Authorization": "Bearer $token",
@@ -421,7 +422,7 @@ Partagez ce trajet avec un autre utilisateur !
     try {
       final token = await _getToken();
       final response = await Dio().post(
-        "http://192.168.1.158:5000/api/verifications/emergency-alert",
+        "${Config.baseUrl}/api/verifications/emergency-alert",
         options: Options(headers: {
           "Authorization": "Bearer $token",
         }),
@@ -639,7 +640,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         });
 
         final response = await dio.post(
-          "http://192.168.1.158:5000/api/verifications/upload-verification",
+          "${Config.baseUrl}/api/verifications/upload-verification",
           data: formData,
           options: Options(
             headers: {

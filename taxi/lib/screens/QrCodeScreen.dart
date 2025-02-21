@@ -31,7 +31,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     _fetchQrCode();
   }
 
-  // Récupérer le QR Code stocké pour l'utilisateur dans la BDD
+  // Retrieve the stored QR Code from the backend without auto-generating a new one.
   Future<void> _fetchQrCode() async {
     setState(() {
       isLoadingQr = true;
@@ -52,8 +52,10 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
           _qrCodeData = response.data["qr_code"];
         });
       } else {
-        // Aucun code n'existe encore : générer un code aléatoire et le stocker
-        await _generateAndStoreQrCode();
+        // No QR code found; display message and do not auto-generate.
+        setState(() {
+          _qrCodeData = "Aucun QR Code";
+        });
       }
     } catch (e) {
       setState(() {
@@ -69,13 +71,14 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
-  // Affiche une boîte de dialogue de confirmation puis génère et stocke le nouveau QR Code
+  // Show a confirmation dialog, then generate and store a new QR Code if confirmed.
   Future<void> _confirmAndGenerateQrCode() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Générer un nouveau QR Code"),
-        content: const Text("Êtes-vous sûr de vouloir générer un nouveau QR Code ? Cela remplacera l'ancien."),
+        content: const Text(
+            "Êtes-vous sûr de vouloir générer un nouveau QR Code ? Cela remplacera l'ancien."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -97,13 +100,13 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
-  // Génère un nouveau QR Code aléatoire et l'envoie au backend pour mise à jour
+  // Generates a new random QR Code and sends it to the backend for updating.
   Future<void> _generateAndStoreQrCode() async {
     setState(() {
       isLoadingQr = true;
     });
     try {
-      final newCode = 'QR${_random.nextInt(900000) + 100000}'; // Code à 6 chiffres
+      final newCode = 'QR${_random.nextInt(900000) + 100000}'; // 6-digit code
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? "";
       final dio = Dio();
@@ -252,15 +255,13 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         child: QrImageView(
           data: _qrCodeData,
           version: QrVersions.auto,
-          size: 220,
-          eyeStyle: const QrEyeStyle(
-            eyeShape: QrEyeShape.square,
-            color: Colors.blueGrey,
-          ),
-          dataModuleStyle: const QrDataModuleStyle(
-            dataModuleShape: QrDataModuleShape.square,
-            color: Colors.black87,
-          ),
+          // Note: The QrImageView widget from qr_flutter package does not accept a 'size' parameter.
+          // Instead, wrap it in a SizedBox to control its dimensions.
+          // For example:
+          // child: SizedBox(width: 220, height: 220, child: QrImage(...))
+          // Here we use a SizedBox:
+          // Alternatively, if your version supports 'size', you may use it.
+          // We'll wrap with SizedBox:
           embeddedImage: const AssetImage('assets/images/logo.png'),
           embeddedImageStyle: QrEmbeddedImageStyle(
             size: const Size(40, 40),

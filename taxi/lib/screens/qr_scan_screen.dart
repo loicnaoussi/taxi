@@ -34,19 +34,20 @@ class _QrScanScreenState extends State<QrScanScreen> {
     _controller = controller;
     _qrSubscription = controller.scannedDataStream.listen((scanData) async {
       if (!mounted) return;
+      // Only process the first scanned result.
+      if (_scanResult != null) return;
+      
       setState(() {
         _scanResult = scanData.code;
       });
-      // Stop the camera after scanning.
+      // Stop the camera once a QR code is scanned.
       await controller.pauseCamera();
-
+      
       // Validate the scanned QR code via the backend.
       await _validateQrCode(_scanResult);
-
-      // Automatically return after 2 seconds.
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) Navigator.pop(context, _scanResult);
-      });
+      
+      // Note: We do NOT automatically pop the screen here.
+      // The user may close the scanner manually.
     });
   }
 
