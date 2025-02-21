@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:dio/dio.dart';
 
 class GpsScanScreen extends StatefulWidget {
   const GpsScanScreen({super.key});
@@ -19,16 +22,24 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
   final LatLng _initialCenter = const LatLng(48.8566, 2.3522);
   final double _initialZoom = 13.0;
 
+  // Liste des marqueurs pour les chauffeurs disponibles (récupérés depuis le backend)
+  List<Marker> _driverMarkers = [];
+
   @override
   void initState() {
     super.initState();
     _initLocation();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _initLocation() async {
     setState(() => _isLoading = true);
     try {
-      // Vérifier si le service de localisation est activé
+      // Vérifier que le service de localisation est activé
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw 'Service de localisation désactivé';
@@ -44,7 +55,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
       if (permission == LocationPermission.deniedForever) {
         throw 'Permission définitivement refusée';
       }
-      // Récupérer la position
+      // Récupérer la position actuelle
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
       );
@@ -52,16 +63,61 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
         _currentPosition = LatLng(pos.latitude, pos.longitude);
         _locationError = null;
       });
-      // Déplacer la caméra après le rendu du widget
+      // Déplacer la caméra après le rendu initial
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_currentPosition != null) {
           _mapController.move(_currentPosition!, 15);
+          _fetchAvailableDrivers();
         }
       });
     } catch (e) {
       setState(() => _locationError = e.toString());
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  // Récupère depuis le backend la liste des chauffeurs connectés
+  Future<void> _fetchAvailableDrivers() async {
+    if (_currentPosition == null) return;
+    try {
+      final response = await Dio().get(
+        "http://192.168.1.158:5000/api/drivers/locations",
+        options: Options(
+          // Accepter les codes d'erreur clients (404) sans lancer d'exception
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      if (response.statusCode == 200) {
+        List data = response.data;
+        List<Marker> markers = data.map<Marker>((driver) {
+          double lat = driver["latitude"];
+          double lng = driver["longitude"];
+          return Marker(
+            width: 30,
+            height: 30,
+            point: LatLng(lat, lng),
+            child: const Icon(
+              Icons.directions_car,
+              color: Colors.blue,
+              size: 30,
+            ),
+          );
+        }).toList();
+        setState(() {
+          _driverMarkers = markers;
+        });
+      } else if (response.statusCode == 404) {
+        // Aucun chauffeur trouvé
+        setState(() {
+          _driverMarkers = [];
+        });
+        print("Aucun chauffeur trouvé.");
+      } else {
+        print("Erreur lors de la récupération des chauffeurs : Code ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Erreur lors de la récupération des chauffeurs: $e");
     }
   }
 
@@ -96,8 +152,8 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
   Widget _buildMap() {
     return FlutterMap(
       mapController: _mapController,
-      // Pour votre version, utilisez initialCenter et initialZoom
       options: MapOptions(
+        // Utilisez initialCenter et initialZoom pour définir la vue initiale
         initialCenter: _currentPosition ?? _initialCenter,
         initialZoom: _initialZoom,
       ),
@@ -106,6 +162,7 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c'],
         ),
+        // Marqueur pour la position de l'utilisateur
         if (_currentPosition != null)
           MarkerLayer(
             markers: [
@@ -113,14 +170,18 @@ class _GpsScanScreenState extends State<GpsScanScreen> {
                 width: 40,
                 height: 40,
                 point: _currentPosition!,
-                // Utiliser 'child' plutôt que 'builder'
                 child: const Icon(
-                  Icons.location_pin,
-                  color: Colors.red,
+                  Icons.person_pin_circle,
+                  color: Colors.green,
                   size: 40,
                 ),
               ),
             ],
+          ),
+        // Marqueurs pour les chauffeurs disponibles
+        if (_driverMarkers.isNotEmpty)
+          MarkerLayer(
+            markers: _driverMarkers,
           ),
       ],
     );
