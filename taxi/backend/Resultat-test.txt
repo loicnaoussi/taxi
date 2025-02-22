@@ -1,0 +1,1783 @@
+commande de test:  npm test > Resultat-test.txt 2>&1
+> backend@1.0.0 test
+> cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit
+
+[0mPOST /api/auth/register [32m201[0m 709.442 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 110.283 ms - 512[0m
+[0mPOST /api/auth/register [32m201[0m 289.090 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 119.938 ms - 496[0m
+[0mPOST /api/auth/register [32m201[0m 455.278 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 104.106 ms - 491[0m
+[0mGET /api/history/my-rides [32m200[0m 10.125 ms - 154[0m
+[0mGET /api/history/ride/19 [32m200[0m 5.242 ms - 165[0m
+[0mGET /api/history/ride/999999 [33m404[0m 5.180 ms - 51[0m
+[0mGET /api/history/actions/my-history [32m200[0m 4.582 ms - 24[0m
+[0mGET /api/history/actions/admin/history [32m200[0m 4.521 ms - 24[0m
+[0mGET /api/history/actions/admin/user/1 [33m403[0m 6.713 ms - 51[0m
+[0mGET /api/history/actions/admin/user/91 [32m200[0m 9.545 ms - 24[0m
+PASS test/history.test.js (5.776 s)
+  ● Console
+
+    console.log
+      🔹 Suppression des anciens utilisateurs et trajets de test...
+
+      at Object.log (test/history.test.js:10:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      ✅ Suppression terminée !
+
+      at Object.log (test/history.test.js:16:13)
+
+    console.log
+      ✅ Utilisateur Passager: 91, Chauffeur: 92, Admin: 93
+
+      at Object.log (test/history.test.js:48:13)
+
+    console.log
+      ✅ Trajet de test créé avec ride_id: 19
+
+      at Object.log (test/history.test.js:62:13)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=91
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔍 Test de récupération du trajet avec ride_id: 19
+
+      at Object.log (test/history.test.js:80:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=91
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse du test trajet spécifique: {
+        ride_id: 19,
+        passenger_id: 91,
+        driver_id: 92,
+        pickup_location: 'Point A',
+        dropoff_location: 'Point B',
+        status: 'completed',
+        created_at: '2025-02-19T12:26:34.000Z'
+      }
+
+      at Object.log (test/history.test.js:93:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=91
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=91
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=93
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=91
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=93
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🧹 Nettoyage et fermeture...
+
+      at Object.log (test/history.test.js:148:13)
+
+    console.log
+      ✅ Tests terminés et serveur arrêté !
+
+      at Object.log (test/history.test.js:156:13)
+
+[0mPOST /api/auth/login [33m401[0m 4.713 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 312.410 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 124.152 ms - 512[0m
+[0mPOST /api/auth/login [33m401[0m 2.636 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 217.044 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 109.015 ms - 506[0m
+[0mPOST /api/rides/create [32m201[0m 49.897 ms - 55[0m
+[0mPOST /api/reports/report [32m201[0m 89.960 ms - 64[0m
+[0mPUT /api/reports/admin/update/5 [32m200[0m 35.148 ms - 53[0m
+PASS test/reports.test.js
+  ● Console
+
+    console.log
+      🔹 Suppression des anciens comptes de test...
+
+      at Object.log (test/reports.test.js:58:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🗑️ Anciens comptes supprimés.
+
+      at Object.log (test/reports.test.js:61:17)
+
+    console.log
+      🚨 passenger introuvable, création du compte...
+
+      at log (test/reports.test.js:22:17)
+
+    console.log
+      ✅ Connexion passenger réussie avec token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo5NCwidXNlcl90eXBlIjoicGFzc2VuZ2VyIiwiaWF0IjoxNzM5OTY3OTk2LCJleHAiOjE3Mzk5NzE1OTZ9.hkMocdCO7eWQRrqiU_jyJsQNRxYF055e_Rbh_ZSbnLE
+
+      at log (test/reports.test.js:52:13)
+
+    console.log
+      🚨 admin introuvable, création du compte...
+
+      at log (test/reports.test.js:22:17)
+
+    console.log
+      ✅ Connexion admin réussie avec token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo5NSwidXNlcl90eXBlIjoiYWRtaW4iLCJpYXQiOjE3Mzk5Njc5OTcsImV4cCI6MTczOTk3MTU5N30.ox2i5KDUykbtpb-_Sx5f7LX4l_0yGUZC15UF6CvfggQ
+
+      at log (test/reports.test.js:52:13)
+
+    console.log
+      🔹 Création d’un trajet de test...
+
+      at Object.log (test/reports.test.js:87:13)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=94
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Trajet créé avec ride_id : 20
+
+      at Object.log (test/reports.test.js:102:13)
+
+    console.log
+      🔹 Création d'un signalement...
+
+      at Object.log (test/reports.test.js:111:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=94
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse signalement : { message: 'Réclamation envoyée avec succès !', report_id: 5 }
+
+      at Object.log (test/reports.test.js:120:17)
+
+    console.log
+      ✅ Signalement créé avec report_id : 5
+
+      at Object.log (test/reports.test.js:124:17)
+
+    console.log
+      🔹 Mise à jour du signalement 5...
+
+      at Object.log (test/reports.test.js:134:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=95
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse mise à jour : { message: 'Réclamation mise à jour avec succès.' }
+
+      at Object.log (test/reports.test.js:141:17)
+
+    console.log
+      🔹 Suppression du signalement 5...
+
+      at Object.log (test/reports.test.js:153:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=95
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse suppression : { message: 'Réclamation supprimée avec succès.' }
+
+      at Object.log (test/reports.test.js:158:17)
+
+    console.log
+      🔹 Suppression des comptes de test...
+
+      at Object.log (test/reports.test.js:173:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/reports.test.js:176:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/reports.test.js:179:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/reports.test.js:181:13)
+
+[0mDELETE /api/reports/admin/delete/5 [32m200[0m 43.476 ms - 51[0m
+[0mPOST /api/auth/login [33m401[0m 3.545 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 249.771 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 113.695 ms - 490[0m
+[0mPOST /api/reviews/add [32m201[0m 90.713 ms - 41[0m
+[0mGET /api/reviews/my-reviews [32m200[0m 8.772 ms - 113[0m
+[0mPOST /api/reviews/add [33m400[0m 3.270 ms - 61[0m
+[0mPOST /api/reviews/add [33m400[0m 2.033 ms - 61[0m
+[0mDELETE /api/reviews/delete/4 [32m200[0m 77.215 ms - 42[0m
+[0mDELETE /api/reviews/delete/9999999 [33m404[0m 4.703 ms - 31[0m
+PASS test/reviewRoutes.test.js
+  ● Console
+
+    console.log
+      🔹 Connexion ou création d'un utilisateur de test...
+
+      at Object.log (test/reviewRoutes.test.js:11:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création du compte...
+
+      at Object.log (test/reviewRoutes.test.js:23:17)
+
+    console.log
+      ✅ Connexion réussie avec user_id: 96
+
+      at Object.log (test/reviewRoutes.test.js:43:13)
+
+    console.log
+      ✅ Trajet de test créé avec ride_id: 21
+
+      at Object.log (test/reviewRoutes.test.js:52:13)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=96
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse ajout avis : { message: 'Avis ajouté avec succès !' }
+
+      at Object.log (test/reviewRoutes.test.js:67:17)
+
+    console.log
+      ✅ Avis ajouté avec review_id: 4
+
+      at Object.log (test/reviewRoutes.test.js:75:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=96
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse récupération avis : [
+        {
+          review_id: 4,
+          ride_id: 21,
+          rating: 5,
+          comment: 'Super trajet, chauffeur très sympa !',
+          reviewer: 'testuser'
+        }
+      ]
+
+      at Object.log (test/reviewRoutes.test.js:83:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=96
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse ajout avis sans ride_id : { message: 'Le trajet et une note entre 1 et 5 sont requis.' }
+
+      at Object.log (test/reviewRoutes.test.js:98:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=96
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse ajout avis avec note invalide : { message: 'Le trajet et une note entre 1 et 5 sont requis.' }
+
+      at Object.log (test/reviewRoutes.test.js:113:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=96
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse suppression avis : { message: 'Avis supprimé avec succès.' }
+
+      at Object.log (test/reviewRoutes.test.js:125:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=96
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse suppression avis inexistant : { message: 'Avis non trouvé.' }
+
+      at Object.log (test/reviewRoutes.test.js:139:17)
+
+    console.log
+      🔹 Suppression des données de test...
+
+      at Object.log (test/reviewRoutes.test.js:147:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/reviewRoutes.test.js:152:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/reviewRoutes.test.js:155:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/reviewRoutes.test.js:157:13)
+
+[0mPOST /api/auth/login [33m401[0m 17.170 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 266.399 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 147.232 ms - 492[0m
+[0mPOST /api/auth/login [33m401[0m 2.577 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 158.617 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 109.822 ms - 491[0m
+[0mPOST /api/rides/create [32m201[0m 36.238 ms - 55[0m
+[0mPOST /api/rides/accept/22 [32m200[0m 54.928 ms - 44[0m
+[0mPOST /api/rides/cancel/22 [32m200[0m 51.766 ms - 42[0m
+PASS test/rides.test.js
+  ● Console
+
+    console.log
+      🔹 Création ou connexion des comptes de test pour les trajets...
+
+      at Object.log (test/rides.test.js:10:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Passager introuvable, création du compte...
+
+      at Object.log (test/rides.test.js:19:17)
+
+    console.log
+      ✅ Connexion passager réussie avec user_id 97
+
+      at Object.log (test/rides.test.js:37:13)
+
+    console.log
+      🚨 Chauffeur introuvable, création du compte...
+
+      at Object.log (test/rides.test.js:46:17)
+
+    console.log
+      ✅ Connexion chauffeur réussie avec user_id 98
+
+      at Object.log (test/rides.test.js:64:13)
+
+    console.log
+      🔹 Création d'un trajet...
+
+      at Object.log (test/rides.test.js:71:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=97
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse création trajet : { message: 'Trajet créé avec succès !', ride_id: 22 }
+
+      at Object.log (test/rides.test.js:81:17)
+
+    console.log
+      ✅ Trajet créé avec ride_id 22
+
+      at Object.log (test/rides.test.js:86:17)
+
+    console.log
+      🔹 Acceptation du trajet 22...
+
+      at Object.log (test/rides.test.js:95:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=98
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse acceptation trajet : { message: 'Trajet accepté avec succès !' }
+
+      at Object.log (test/rides.test.js:100:17)
+
+    console.log
+      ✅ Trajet 22 accepté par le chauffeur
+
+      at Object.log (test/rides.test.js:103:17)
+
+    console.log
+      🔹 Annulation du trajet 22...
+
+      at Object.log (test/rides.test.js:112:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=97
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse annulation trajet : { message: 'Trajet annulé avec succès.' }
+
+      at Object.log (test/rides.test.js:117:17)
+
+    console.log
+      ✅ Trajet 22 annulé par le passager
+
+      at Object.log (test/rides.test.js:120:17)
+
+    console.log
+      🔹 Récupération des trajets du passager...
+
+      at Object.log (test/rides.test.js:124:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=97
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse trajets du passager : {
+        rides: [
+          {
+            ride_id: 22,
+            pickup_location: 'Paris',
+            dropoff_location: 'Lyon',
+            status: 'canceled',
+            created_at: '2025-02-19T12:26:41.000Z'
+          }
+        ]
+      }
+
+      at Object.log (test/rides.test.js:129:17)
+
+    console.log
+      ✅ Le passager a 1 trajets dans son historique.
+
+      at Object.log (test/rides.test.js:132:17)
+
+    console.log
+      🔹 Récupération des trajets du chauffeur...
+
+      at Object.log (test/rides.test.js:136:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=98
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse trajets du chauffeur : {
+        rides: [
+          {
+            ride_id: 22,
+            pickup_location: 'Paris',
+            dropoff_location: 'Lyon',
+            status: 'canceled',
+            created_at: '2025-02-19T12:26:41.000Z'
+          }
+        ]
+      }
+
+      at Object.log (test/rides.test.js:141:17)
+
+    console.log
+      ✅ Le chauffeur a 1 trajets dans son historique.
+
+      at Object.log (test/rides.test.js:144:17)
+
+    console.log
+      🔹 Suppression des comptes de test...
+
+      at Object.log (test/rides.test.js:149:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/rides.test.js:155:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/rides.test.js:157:13)
+
+[0mGET /api/rides/my-rides [32m200[0m 5.359 ms - 138[0m
+[0mGET /api/rides/my-rides [32m200[0m 3.839 ms - 138[0m
+[0mPOST /api/auth/register [32m201[0m 265.689 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 112.681 ms - 490[0m
+[0mPOST /api/auth/register [33m400[0m 3.403 ms - 62[0m
+[0mPOST /api/auth/login [32m200[0m 97.703 ms - 490[0m
+[0mGET /api/users/profile [32m200[0m 5.937 ms - 168[0m
+[0mPUT /api/users/update [32m200[0m 50.267 ms - 47[0m
+[0mPUT /api/users/update [33m400[0m 2.075 ms - 47[0m
+[0mPOST /api/users/upload-photo [32m200[0m 83.564 ms - 142[0m
+[0mPOST /api/users/upload-photo [33m400[0m 15.961 ms - 57[0m
+PASS test/usersRoutes.test.js
+  ● Console
+
+    console.log
+      🔹 Suppression des anciens utilisateurs de test...
+
+      at Object.log (test/usersRoutes.test.js:15:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      ✅ Suppression terminée !
+
+      at Object.log (test/usersRoutes.test.js:17:13)
+
+    console.log
+      🔹 Réponse connexion : {
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo5OSwidXNlcl90eXBlIjoicGFzc2VuZ2VyIiwiaWF0IjoxNzM5OTY4MDAyLCJleHAiOjE3Mzk5NzE2MDJ9.a2pITWfwo9lJ2VwyN2DaW0PEin-mgsKAz1_kDpz81aA',
+        user: {
+          user_id: 99,
+          username: 'testuser',
+          email: 'testuser@example.com',
+          password_hash: '$2a$10$k463hC9tjK.XUr1e5oNDYeo.GVHVB4qT2vl2.LyjlJYuFs6O9Y5H6',
+          full_name: 'Test User',
+          phone_number: '0612345678',
+          profile_image_url: null,
+          user_type: 'passenger',
+          created_at: '2025-02-19T12:26:42.000Z'
+        }
+      }
+
+      at Object.log (test/usersRoutes.test.js:39:13)
+
+    console.log
+      🔹 Réponse inscription : { message: 'Email ou numéro de téléphone déjà utilisé.' }
+
+      at Object.log (test/usersRoutes.test.js:63:17)
+
+    console.log
+      🔹 Réponse connexion : {
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo5OSwidXNlcl90eXBlIjoicGFzc2VuZ2VyIiwiaWF0IjoxNzM5OTY4MDAyLCJleHAiOjE3Mzk5NzE2MDJ9.a2pITWfwo9lJ2VwyN2DaW0PEin-mgsKAz1_kDpz81aA',
+        user: {
+          user_id: 99,
+          username: 'testuser',
+          email: 'testuser@example.com',
+          password_hash: '$2a$10$k463hC9tjK.XUr1e5oNDYeo.GVHVB4qT2vl2.LyjlJYuFs6O9Y5H6',
+          full_name: 'Test User',
+          phone_number: '0612345678',
+          profile_image_url: null,
+          user_type: 'passenger',
+          created_at: '2025-02-19T12:26:42.000Z'
+        }
+      }
+
+      at Object.log (test/usersRoutes.test.js:75:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=99
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse récupération profil : {
+        user_id: 99,
+        username: 'testuser',
+        email: 'testuser@example.com',
+        full_name: 'Test User',
+        phone_number: '0612345678',
+        profile_image_url: null,
+        user_type: 'passenger'
+      }
+
+      at Object.log (test/usersRoutes.test.js:89:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=99
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse mise à jour profil : { message: 'Profil mis à jour avec succès !' }
+
+      at Object.log (test/usersRoutes.test.js:105:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=99
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse mise à jour vide : { message: 'Aucune donnée à mettre à jour.' }
+
+      at Object.log (test/usersRoutes.test.js:116:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=99
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse mise à jour photo : {
+        message: 'Photo de profil mise à jour avec succès !',
+        profile_image_url: 'http://127.0.0.1:52860/uploads/99_1739968003124_test_image.jpg'
+      }
+
+      at Object.log (test/usersRoutes.test.js:133:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=99
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse upload fichier non image : { message: 'Seuls les fichiers images sont autorisés !' }
+
+      at Object.log (test/usersRoutes.test.js:149:17)
+
+    console.log
+      🔹 Suppression des utilisateurs de test...
+
+      at Object.log (test/usersRoutes.test.js:161:17)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/usersRoutes.test.js:164:17)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/usersRoutes.test.js:167:17)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/usersRoutes.test.js:169:17)
+
+[0mPOST /api/auth/login [33m401[0m 22.442 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 261.975 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 135.703 ms - 520[0m
+[0mPOST /api/auth/login [33m401[0m 5.593 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 401.831 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 103.306 ms - 537[0m
+[0mPOST /api/notifications/send [32m201[0m 91.334 ms - 50[0m
+[0mGET /api/notifications/my-notifications [32m200[0m 62.756 ms - 160[0m
+[0mDELETE /api/users/delete-test-account [33m404[0m 4.098 ms - 171[0m
+PASS test/notifications.test.js
+  ● Console
+
+    console.log
+      🔹 Vérification ou création des comptes utilisateur et admin pour les tests de notifications...
+
+      at Object.log (test/notifications.test.js:7:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Admin introuvable, création du compte admin...
+
+      at Object.log (test/notifications.test.js:16:17)
+
+    console.log
+      ✅ Connexion admin réussie !
+
+      at Object.log (test/notifications.test.js:35:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création du compte passager...
+
+      at Object.log (test/notifications.test.js:44:17)
+
+    console.log
+      ✅ Connexion utilisateur réussie !
+
+      at Object.log (test/notifications.test.js:64:13)
+
+    console.log
+      🔹 Envoi d'une notification depuis l'admin...
+
+      at Object.log (test/notifications.test.js:71:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=100
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Requête reçue pour envoyer une notification : {
+        user_id: 101,
+        title: 'Nouvelle alerte',
+        message: 'Votre trajet est confirmé !'
+      }
+
+      at log (routes/notificationRoutes.js:62:21)
+
+    console.log
+      ⚠️ L'utilisateur 101 n'est pas connecté. La notification est stockée en base.
+
+      at log (routes/notificationRoutes.js:80:25)
+
+    console.log
+      🔹 Réponse envoi notification : { message: 'Notification envoyée avec succès !' }
+
+      at Object.log (test/notifications.test.js:81:17)
+
+    console.log
+      🔹 Récupération des notifications...
+
+      at Object.log (test/notifications.test.js:87:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=101
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Récupération des notifications pour user_id: 101
+
+      at log (routes/notificationRoutes.js:109:21)
+
+    console.log
+      ✅ Notifications récupérées : [
+        {
+          notification_id: 5,
+          title: 'Nouvelle alerte',
+          message: 'Votre trajet est confirmé !',
+          is_read: 0,
+          created_at: 2025-02-19T12:26:45.000Z
+        }
+      ]
+
+      at log (routes/notificationRoutes.js:122:25)
+
+    console.log
+      🔹 Notifications récupérées : {
+        notifications: [
+          {
+            notification_id: 5,
+            title: 'Nouvelle alerte',
+            message: 'Votre trajet est confirmé !',
+            is_read: 0,
+            created_at: '2025-02-19T12:26:45.000Z'
+          }
+        ]
+      }
+
+      at Object.log (test/notifications.test.js:92:17)
+
+    console.log
+      🔹 Suppression des comptes de test...
+
+      at Object.log (test/notifications.test.js:101:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/notifications.test.js:104:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/notifications.test.js:106:13)
+
+[0mPOST /api/auth/login [33m401[0m 3.442 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 247.099 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 103.805 ms - 493[0m
+[0mGET /api/protected [33m401[0m 1.265 ms - 43[0m
+[0mGET /api/protected [32m200[0m 2.309 ms - 69[0m
+[0mGET /api/protected/profile [32m200[0m 5.085 ms - 264[0m
+[0mGET /api/protected/profile [33m401[0m 0.916 ms - 43[0m
+[0mGET /api/protected/profile [31m500[0m 2.307 ms - 76[0m
+PASS test/protectedRoutes.test.js
+  ● Console
+
+    console.log
+      🔹 Connexion ou création d'un utilisateur de test...
+
+      at Object.log (test/protectedRoutes.test.js:9:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création du compte...
+
+      at Object.log (test/protectedRoutes.test.js:19:17)
+
+    console.log
+      ✅ Connexion réussie avec user_id: 102
+
+      at Object.log (test/protectedRoutes.test.js:39:13)
+
+    console.warn
+      🚫 JWT manquant ou invalide !
+
+    [0m [90m  7 |[39m
+     [90m  8 |[39m         [36mif[39m ([33m![39mauthHeader [33m||[39m [33m![39mauthHeader[33m.[39mstartsWith([32m"Bearer "[39m)) {
+    [31m[1m>[22m[39m[90m  9 |[39m             console[33m.[39mwarn([32m"🚫 JWT manquant ou invalide !"[39m)[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 10 |[39m             [36mreturn[39m res[33m.[39mstatus([35m401[39m)[33m.[39mjson({ message[33m:[39m [32m"Non autorisé, token manquant"[39m })[33m;[39m
+     [90m 11 |[39m         }
+     [90m 12 |[39m[0m
+
+      at warn (middleware/authMiddleware.js:9:21)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at next (node_modules/express/lib/router/route.js:149:13)
+      at Route.dispatch (node_modules/express/lib/router/route.js:119:3)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at node_modules/express/lib/router/index.js:284:15
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Function.handle (node_modules/express/lib/router/index.js:175:3)
+      at router (node_modules/express/lib/router/index.js:47:12)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/express-rate-limit/dist/index.cjs:822:7
+      at node_modules/express-rate-limit/dist/index.cjs:704:5
+
+    console.log
+      🔹 Réponse sans JWT : { message: 'Non autorisé, token manquant' }
+
+      at Object.log (test/protectedRoutes.test.js:47:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=102
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse avec JWT : { status: 'success', message: 'Bienvenue dans la route protégée !' }
+
+      at Object.log (test/protectedRoutes.test.js:57:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=102
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse récupération profil : {
+        status: 'success',
+        message: "Accès autorisé à l'espace protégé.",
+        user: {
+          user_id: 102,
+          username: 'testuser',
+          email: 'testuser@example.com',
+          phone_number: '0612345678',
+          full_name: 'Test User',
+          user_type: 'passenger',
+          created_at: '2025-02-19T12:26:46.000Z'
+        }
+      }
+
+      at Object.log (test/protectedRoutes.test.js:68:17)
+
+    console.warn
+      🚫 JWT manquant ou invalide !
+
+    [0m [90m  7 |[39m
+     [90m  8 |[39m         [36mif[39m ([33m![39mauthHeader [33m||[39m [33m![39mauthHeader[33m.[39mstartsWith([32m"Bearer "[39m)) {
+    [31m[1m>[22m[39m[90m  9 |[39m             console[33m.[39mwarn([32m"🚫 JWT manquant ou invalide !"[39m)[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 10 |[39m             [36mreturn[39m res[33m.[39mstatus([35m401[39m)[33m.[39mjson({ message[33m:[39m [32m"Non autorisé, token manquant"[39m })[33m;[39m
+     [90m 11 |[39m         }
+     [90m 12 |[39m[0m
+
+      at warn (middleware/authMiddleware.js:9:21)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at next (node_modules/express/lib/router/route.js:149:13)
+      at Route.dispatch (node_modules/express/lib/router/route.js:119:3)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at node_modules/express/lib/router/index.js:284:15
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Function.handle (node_modules/express/lib/router/index.js:175:3)
+      at router (node_modules/express/lib/router/index.js:47:12)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/express-rate-limit/dist/index.cjs:822:7
+      at node_modules/express-rate-limit/dist/index.cjs:704:5
+
+    console.log
+      🔹 Réponse récupération profil sans JWT : { message: 'Non autorisé, token manquant' }
+
+      at Object.log (test/protectedRoutes.test.js:79:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=102
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse erreur serveur simulée : {
+        status: 'error',
+        message: 'Erreur serveur.',
+        error: 'Erreur SQL simulée'
+      }
+
+      at Object.log (test/protectedRoutes.test.js:91:17)
+
+    console.log
+      🔹 Suppression de l'utilisateur de test...
+
+      at Object.log (test/protectedRoutes.test.js:103:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/protectedRoutes.test.js:106:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/protectedRoutes.test.js:109:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/protectedRoutes.test.js:111:13)
+
+[0mPOST /api/auth/register [32m201[0m 542.313 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 237.411 ms - 492[0m
+[0mPOST /api/vehicles/add [32m201[0m 150.890 ms - 61[0m
+[0mGET /api/vehicles/my-vehicles [32m200[0m 14.413 ms - 264[0m
+[0mPUT /api/vehicles/edit-vehicle/8 [32m200[0m 77.569 ms - 49[0m
+[0mPUT /api/vehicles/edit-vehicle/9999999 [33m404[0m 11.165 ms - 36[0m
+[0mDELETE /api/vehicles/delete-vehicle/8 [32m200[0m 65.656 ms - 47[0m
+[0mDELETE /api/vehicles/delete-vehicle/9999999 [33m404[0m 87.642 ms - 36[0m
+PASS test/vehicles.test.js
+  ● Console
+
+    console.log
+      🔹 Suppression des anciens chauffeurs et véhicules de test...
+
+      at Object.log (test/vehicles.test.js:14:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      ✅ Suppression terminée !
+
+      at Object.log (test/vehicles.test.js:17:13)
+
+    console.log
+      🔹 Réponse inscription chauffeur : { message: 'Utilisateur inscrit avec succès !' }
+
+      at Object.log (test/vehicles.test.js:31:13)
+
+    console.log
+      🔹 Réponse connexion chauffeur : {
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMDMsInVzZXJfdHlwZSI6ImRyaXZlciIsImlhdCI6MTczOTk2ODAwOCwiZXhwIjoxNzM5OTcxNjA4fQ.njUN_iOYQtNuq_QDdBbtDMx3hSayu8sgyuVB45xWeCY',
+        user: {
+          user_id: 103,
+          username: 'testdriver',
+          email: 'testdriver@example.com',
+          password_hash: '$2a$10$UqqIQn42R0tpy7GSqmONFudKXX8yZhWT4IUxA/kXkodddB.iASq1q',
+          full_name: 'Test Driver',
+          phone_number: '0611122334',
+          profile_image_url: null,
+          user_type: 'driver',
+          created_at: '2025-02-19T12:26:48.000Z'
+        }
+      }
+
+      at Object.log (test/vehicles.test.js:42:13)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=103
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse ajout véhicule : { message: 'Véhicule ajouté avec succès !', vehicle_id: 8 }
+
+      at Object.log (test/vehicles.test.js:75:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=103
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse récupération véhicules : [
+        {
+          vehicle_id: 8,
+          driver_id: 103,
+          marque: 'Toyota',
+          model: 'Corolla',
+          year: 2021,
+          license_plate: 'XYZ-123',
+          immatriculation: '123456789',
+          couleur: 'Noir',
+          status: 'active',
+          carte_grise: '1739968008901-test_carte_grise.jpg',
+          created_at: '2025-02-19T12:26:48.000Z'
+        }
+      ]
+
+      at Object.log (test/vehicles.test.js:88:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=103
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse modification véhicule : { message: 'Véhicule mis à jour avec succès.' }
+
+      at Object.log (test/vehicles.test.js:102:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=103
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse modification véhicule inexistant : { message: 'Véhicule non trouvé.' }
+
+      at Object.log (test/vehicles.test.js:113:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=103
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse suppression véhicule : { message: 'Véhicule supprimé avec succès.' }
+
+      at Object.log (test/vehicles.test.js:125:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=103
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse suppression véhicule inexistant : { message: 'Véhicule non trouvé.' }
+
+      at Object.log (test/vehicles.test.js:135:17)
+
+    console.log
+      🔹 Suppression des données de test...
+
+      at Object.log (test/vehicles.test.js:142:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/vehicles.test.js:146:13)
+
+    console.log
+      ✅ Serveur et connexion à la base de données fermés !
+
+      at Object.log (test/vehicles.test.js:149:13)
+
+[0mPOST /api/auth/login [33m401[0m 22.741 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 182.735 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 211.703 ms - 519[0m
+[0mPOST /api/verification/upload-verification [32m201[0m 194.535 ms - 63[0m
+[0mGET /api/verification/status [32m200[0m 34.808 ms - 20[0m
+PASS test/verification.test.js
+  ● Console
+
+    console.log
+      🔹 Création ou connexion du compte utilisateur pour les tests de vérification...
+
+      at Object.log (test/verification.test.js:8:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création du compte...
+
+      at Object.log (test/verification.test.js:20:17)
+
+    console.log
+      ✅ Connexion utilisateur réussie avec user_id 104
+
+      at Object.log (test/verification.test.js:47:13)
+
+    console.log
+      🔹 Envoi des fichiers de vérification...
+
+      at Object.log (test/verification.test.js:54:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=104
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Table `verifications` vérifiée ou créée.
+
+      at log (routes/verificationRoutes.js:24:17)
+
+    console.log
+      🔹 Réponse envoi de vérification : { message: 'Fichiers de vérification envoyés avec succès !' }
+
+      at Object.log (test/verification.test.js:63:17)
+
+    console.log
+      🔹 Récupération du statut de vérification...
+
+      at Object.log (test/verification.test.js:69:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=104
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      ✅ Table `verifications` vérifiée ou créée.
+
+      at log (routes/verificationRoutes.js:24:17)
+
+    console.log
+      🔹 Réponse statut vérification : { status: 'pending' }
+
+      at Object.log (test/verification.test.js:75:17)
+
+    console.log
+      🔹 Suppression du compte utilisateur de test...
+
+      at Object.log (test/verification.test.js:86:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/verification.test.js:89:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/verification.test.js:92:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/verification.test.js:94:13)
+
+[0mPOST /api/auth/register [32m201[0m 228.879 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 269.926 ms - 493[0m
+PASS test/auth.test.js
+  ● Console
+
+    console.log
+      🔹 Suppression des anciens utilisateurs et trajets de test...
+
+      at Object.log (test/auth.test.js:11:17)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      ✅ Suppression terminée !
+
+      at Object.log (test/auth.test.js:15:17)
+
+    console.log
+      🔹 Réponse inscription : { message: 'Utilisateur inscrit avec succès !' }
+
+      at Object.log (test/auth.test.js:35:17)
+
+    console.log
+      🔹 Réponse connexion : {
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMDUsInVzZXJfdHlwZSI6InBhc3NlbmdlciIsImlhdCI6MTczOTk2ODAxMiwiZXhwIjoxNzM5OTcxNjEyfQ.AwVPxGHSrC3pVspu-dlhAFWbTZ-uMBq2WW_Xgxu1EXA',
+        user: {
+          user_id: 105,
+          username: 'testuser',
+          email: 'testuser@example.com',
+          password_hash: '$2a$10$wSwH5WbYfYeHD9KOoWPoxet7rwQfVnazOIJ78PwQ7gN0BoT1AV1M6',
+          full_name: 'Test User',
+          phone_number: '0612345678',
+          profile_image_url: null,
+          user_type: 'passenger',
+          created_at: '2025-02-19T12:26:52.000Z'
+        }
+      }
+
+      at Object.log (test/auth.test.js:49:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=105
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse mise à jour du profil : { message: 'Profil mis à jour avec succès !' }
+
+      at Object.log (test/auth.test.js:71:17)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/auth.test.js:80:17)
+
+    console.log
+      ✅ Serveur et connexion à la base de données fermés !
+
+      at Object.log (test/auth.test.js:83:17)
+
+[0mPUT /api/users/update [32m200[0m 362.998 ms - 47[0m
+[0mPOST /api/auth/login [33m401[0m 3.944 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 187.033 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 119.890 ms - 494[0m
+PASS test/tracking.test.js
+  ● Console
+
+    console.log
+      🔹 Connexion du chauffeur pour les tests de tracking...
+
+      at Object.log (test/tracking.test.js:9:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Chauffeur introuvable, création d'un compte chauffeur...
+
+      at Object.log (test/tracking.test.js:21:17)
+
+    console.log
+      ✅ Chauffeur créé avec succès !
+
+      at Object.log (test/tracking.test.js:44:21)
+
+    console.log
+      ✅ Connexion chauffeur réussie avec user_id 106
+
+      at Object.log (test/tracking.test.js:59:13)
+
+    console.log
+      🔹 Mise à jour de la position...
+
+      at Object.log (test/tracking.test.js:66:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=106
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      📍 Position mise à jour pour user_id 106 : (48.8566, 2.3522)
+
+      at log (routes/rideRoutes.js:256:17)
+
+    console.log
+      🔹 Position mise à jour : { message: 'Position mise à jour avec succès' }
+
+      at Object.log (test/tracking.test.js:76:17)
+
+    console.log
+      🔹 Récupération de la position...
+
+      at Object.log (test/tracking.test.js:82:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=106
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      📍 Position trouvée pour user_id 106 : {
+        latitude: '48.856600',
+        longitude: '2.352200',
+        last_updated: 2025-02-19T12:26:54.000Z
+      }
+
+      at log (routes/rideRoutes.js:303:17)
+
+    console.log
+      🔹 Position récupérée : {
+        latitude: '48.856600',
+        longitude: '2.352200',
+        last_updated: '2025-02-19T12:26:54.000Z'
+      }
+
+      at Object.log (test/tracking.test.js:88:17)
+
+    console.log
+      🗑️ Suppression du compte chauffeur de test...
+
+      at Object.log (test/tracking.test.js:101:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/tracking.test.js:104:13)
+
+    console.log
+      🛑 Fermeture du serveur...
+
+      at Object.log (test/tracking.test.js:107:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/tracking.test.js:109:13)
+
+[0mPOST /api/rides/update-location [32m200[0m 83.356 ms - 48[0m
+[0mGET /api/rides/location/106 [32m200[0m 9.150 ms - 89[0m
+[0mPOST /api/auth/login [33m401[0m 48.216 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 243.493 ms - 48[0m
+PASS test/qrcodes.test.js
+  ● Console
+
+    console.log
+      🔹 Connexion ou création d'un utilisateur test pour les QR Codes...
+
+      at Object.log (test/qrcodes.test.js:9:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création d'un compte...
+
+      at Object.log (test/qrcodes.test.js:18:17)
+
+    console.log
+      ✅ Connexion réussie avec token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMDcsInVzZXJfdHlwZSI6InBhc3NlbmdlciIsImlhdCI6MTczOTk2ODAxNiwiZXhwIjoxNzM5OTcxNjE2fQ.Ey-JGi205kcPT12wajEVb43PyjYJljFTEYkB68vW_7A
+
+      at Object.log (test/qrcodes.test.js:36:13)
+
+    console.log
+      🔹 Test : Récupération du QR Code...
+
+      at Object.log (test/qrcodes.test.js:43:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=107
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse récupération QR Code : { message: 'Aucun QR Code trouvé.' }
+
+      at Object.log (test/qrcodes.test.js:48:17)
+
+    console.warn
+      ⚠️ Aucun QR Code trouvé. Test réussi avec message.
+
+    [0m [90m 49 |[39m
+     [90m 50 |[39m         [36mif[39m (res[33m.[39mstatusCode [33m===[39m [35m404[39m) {
+    [31m[1m>[22m[39m[90m 51 |[39m             console[33m.[39mwarn([32m"⚠️ Aucun QR Code trouvé. Test réussi avec message."[39m)[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 52 |[39m             [90m// ✅ Pas d'erreur, on retourne un statut 200 avec message[39m
+     [90m 53 |[39m             expect(res[33m.[39mbody[33m.[39mmessage)[33m.[39mtoBe([32m"Aucun QR Code trouvé."[39m)[33m;[39m
+     [90m 54 |[39m         } [36melse[39m {[0m
+
+      at Object.warn (test/qrcodes.test.js:51:21)
+
+    console.log
+      🔹 Test : Validation du QR Code...
+
+      at Object.log (test/qrcodes.test.js:63:17)
+
+    console.warn
+      ⚠️ Pas de QR Code disponible, validation ignorée.
+
+    [0m [90m 64 |[39m
+     [90m 65 |[39m         [36mif[39m ([33m![39mqrCodeData) {
+    [31m[1m>[22m[39m[90m 66 |[39m             console[33m.[39mwarn([32m"⚠️ Pas de QR Code disponible, validation ignorée."[39m)[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 67 |[39m             [36mreturn[39m[33m;[39m [90m// ✅ On ignore sans échec[39m
+     [90m 68 |[39m         }
+     [90m 69 |[39m[0m
+
+      at Object.warn (test/qrcodes.test.js:66:21)
+
+    console.log
+      🔹 Suppression du compte test après les tests...
+
+      at Object.log (test/qrcodes.test.js:82:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/qrcodes.test.js:85:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/qrcodes.test.js:87:13)
+
+[0mPOST /api/auth/login [32m200[0m 164.856 ms - 504[0m
+[0mGET /api/qrcodes/my-qrcode [33m404[0m 5.919 ms - 36[0m
+[0mPOST /api/auth/login [33m401[0m 23.062 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 247.697 ms - 48[0m
+PASS test/payments.test.js
+  ● Console
+
+    console.log
+      🔹 Connexion de l'utilisateur...
+
+      at Object.log (test/payments.test.js:9:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création du compte...
+
+      at Object.log (test/payments.test.js:17:17)
+
+    console.log
+      ✅ Connexion utilisateur réussie !
+
+      at Object.log (test/payments.test.js:42:13)
+
+    console.log
+      🔹 Réponse paiement : {}
+
+      at Object.log (test/payments.test.js:56:17)
+
+    console.warn
+      ⚠️ Route de paiement introuvable (404). Vérifiez la route.
+
+    [0m [90m 59 |[39m             expect(res[33m.[39mbody)[33m.[39mtoHaveProperty([32m"message"[39m[33m,[39m [32m"Paiement effectué avec succès !"[39m)[33m;[39m
+     [90m 60 |[39m         } [36melse[39m {
+    [31m[1m>[22m[39m[90m 61 |[39m             console[33m.[39mwarn([32m"⚠️ Route de paiement introuvable (404). Vérifiez la route."[39m)[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 62 |[39m         }
+     [90m 63 |[39m     })[33m;[39m
+     [90m 64 |[39m[0m
+
+      at Object.warn (test/payments.test.js:61:21)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=108
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Historique paiements : { message: 'Aucun paiement trouvé.' }
+
+      at Object.log (test/payments.test.js:69:17)
+
+    console.log
+      🔹 Suppression des paiements de test...
+
+      at Object.log (test/payments.test.js:79:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/payments.test.js:82:13)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/payments.test.js:85:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/payments.test.js:87:13)
+
+[0mPOST /api/auth/login [32m200[0m 110.487 ms - 504[0m
+[0mPOST /api/payments/process [33m404[0m 0.882 ms - 160[0m
+[0mGET /api/payments/history [32m200[0m 6.465 ms - 37[0m
+[0mPOST /api/auth/login [33m401[0m 19.466 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 195.814 ms - 48[0m
+[0mPOST /api/auth/login [32m200[0m 115.286 ms - 523[0m
+[0mPOST /api/emergency/add [32m201[0m 75.364 ms - 69[0m
+[0mGET /api/emergency/my-contacts [32m200[0m 5.029 ms - 117[0m
+[0mDELETE /api/emergency/delete/5 [32m200[0m 88.270 ms - 55[0m
+PASS test/emergency.test.js
+  ● Console
+
+    console.log
+      🔹 Vérification ou création d'un compte utilisateur pour les tests de contacts d’urgence...
+
+      at Object.log (test/emergency.test.js:9:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Utilisateur introuvable, création du compte de test...
+
+      at Object.log (test/emergency.test.js:18:17)
+
+    console.log
+      ✅ Connexion utilisateur réussie !
+
+      at Object.log (test/emergency.test.js:43:13)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=109
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse ajout contact : { message: "Contact d'urgence ajouté avec succès !", contact_id: 5 }
+
+      at Object.log (test/emergency.test.js:56:17)
+
+    console.log
+      ✅ Contact ajouté avec succès, ID: 5
+
+      at Object.log (test/emergency.test.js:61:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=109
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Contacts récupérés : [
+        {
+          contact_id: 5,
+          contact_name: 'Contact Test',
+          contact_phone: '0611122334',
+          created_at: '2025-02-19T12:26:59.000Z'
+        }
+      ]
+
+      at Object.log (test/emergency.test.js:69:17)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=109
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse suppression contact (ID: 5): { message: "Contact d'urgence supprimé avec succès." }
+
+      at Object.log (test/emergency.test.js:79:17)
+
+    console.log
+      🔹 Fermeture du serveur...
+
+      at Object.log (test/emergency.test.js:86:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/emergency.test.js:88:13)
+
+[0mPOST /api/auth/login [33m401[0m 10.397 ms - 38[0m
+[0mPOST /api/auth/register [32m201[0m 188.763 ms - 48[0m
+PASS test/adminDashboard.test.js
+  ● Console
+
+    console.log
+      🔹 Vérification ou création d'un compte admin pour les tests du tableau de bord...
+
+      at Object.log (test/adminDashboard.test.js:8:13)
+
+    console.log
+      🗑️ Suppression des anciens comptes admin...
+
+      at Object.log (test/adminDashboard.test.js:11:13)
+
+    console.log
+      ✅ Serveur démarré sur le port 5000
+
+      at Server.log (server.js:170:13)
+
+    console.log
+      📄 Documentation disponible sur http://localhost:5000/api-docs
+
+      at Server.log (server.js:171:13)
+
+    console.log
+      🚨 Admin introuvable, création du compte admin de test...
+
+      at Object.log (test/adminDashboard.test.js:21:17)
+
+    console.log
+      ✅ Admin créé avec succès !
+
+      at Object.log (test/adminDashboard.test.js:44:21)
+
+    console.log
+      ✅ Connexion admin réussie !
+
+      at Object.log (test/adminDashboard.test.js:58:13)
+
+    console.log
+      ✅ Utilisateur authentifié: user_id=110
+
+      at log (middleware/authMiddleware.js:16:17)
+
+    console.log
+      🔹 Réponse statistiques : {
+        totalUsers: 6,
+        totalRides: 0,
+        completedRides: 0,
+        pendingPayments: 0,
+        totalEarnings: 0
+      }
+
+      at Object.log (test/adminDashboard.test.js:67:17)
+
+    console.log
+      🗑️ Suppression du compte admin de test...
+
+      at Object.log (test/adminDashboard.test.js:77:13)
+
+    console.log
+      🔹 Fermeture propre de la connexion MySQL...
+
+      at Object.log (test/adminDashboard.test.js:80:13)
+
+    console.log
+      🛑 Fermeture du serveur...
+
+      at Object.log (test/adminDashboard.test.js:83:13)
+
+    console.log
+      ✅ Serveur fermé !
+
+      at Object.log (test/adminDashboard.test.js:85:13)
+
+
+Test Suites: 15 passed, 15 total
+Tests:       56 passed, 56 total
+Snapshots:   0 total
+Time:        31.377 s
+Ran all test suites.
+[0mPOST /api/auth/login [32m200[0m 119.806 ms - 488[0m
+[0mGET /api/admin/dashboard [32m200[0m 14.574 ms - 88[0m
