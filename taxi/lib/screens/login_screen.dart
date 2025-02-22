@@ -74,12 +74,16 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, Routes.passengerHome);
         }
       } else {
-        // If the API returns an error (e.g., 401), show a beautiful dialog prompting re-entry.
+        // If the API returns an error (e.g., 401), show a dialog prompting re-entry.
         _showRetryDialog(response.data["message"] ?? "Identifiant ou mot de passe incorrect. Veuillez réessayer.");
       }
     } on DioError catch (e) {
-      // Handle network or other errors
-      String errorMsg = "Login failed: ${e.response?.data["message"] ?? e.toString()}";
+      String errorMsg;
+      if (e.response?.data is Map) {
+        errorMsg = "Login failed: ${e.response?.data["message"] ?? e.toString()}";
+      } else {
+        errorMsg = "Login failed: ${e.response?.data ?? e.toString()}";
+      }
       _showRetryDialog(errorMsg);
     } catch (e) {
       _showRetryDialog("Login failed: ${e.toString()}");
