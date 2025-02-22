@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:photo_manager/photo_manager.dart'; // Utilisation de photo_manager
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,7 +31,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     _fetchQrCode();
   }
 
-  // Fetch the stored QR code from the backend.
+  // Récupère le QR Code stocké depuis le backend.
   Future<void> _fetchQrCode() async {
     setState(() {
       isLoadingQr = true;
@@ -51,7 +52,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
           _qrCodeData = response.data["qr_code"];
         });
       } else {
-        // If no code exists, let the user generate one manually.
+        // Aucun QR Code trouvé, on laisse l'utilisateur générer un nouveau.
         setState(() {
           _qrCodeData = "Aucun QR Code trouvé";
         });
@@ -70,7 +71,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
-  // Confirm and generate a new QR code manually.
+  // Confirme et génère manuellement un nouveau QR Code.
   Future<void> _confirmAndGenerateQrCode() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -98,13 +99,13 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
-  // Generate a new 6-digit QR code and update it on the backend.
+  // Génère un nouveau QR Code 6 chiffres et le met à jour sur le backend.
   Future<void> _generateAndStoreQrCode() async {
     setState(() {
       isLoadingQr = true;
     });
     try {
-      final newCode = 'QR${_random.nextInt(900000) + 100000}'; // 6-digit code
+      final newCode = 'QR${_random.nextInt(900000) + 100000}'; // Code à 6 chiffres
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? "";
       final dio = Dio();
@@ -134,6 +135,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     }
   }
 
+  // Sauvegarde le QR Code dans la galerie en utilisant photo_manager.
   Future<void> _downloadQrCode() async {
     try {
       final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -144,18 +146,26 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
       final pngBytes = byteData?.buffer.asUint8List();
       if (pngBytes == null) return;
 
-      final status = await Permission.storage.request();
-      if (!status.isGranted) return;
+      // Demande d'autorisation via photo_manager.
+      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (!ps.isAuth) {
+        _showSnackBar('Permission refusée');
+        return;
+      }
 
-      final result = await ImageGallerySaver.saveImage(pngBytes);
-      if (result['isSuccess']) {
-        _showSnackBar('QR Code saved to gallery');
+      // Sauvegarde de l'image dans la galerie.
+      final AssetEntity? asset = await PhotoManager.editor.saveImage(pngBytes, filename: 'qr_code_${_random.nextInt(10000)}.png');
+      if (asset != null) {
+        _showSnackBar('QR Code sauvegardé dans la galerie');
+      } else {
+        _showSnackBar('Échec de la sauvegarde du QR Code');
       }
     } catch (e) {
-      _showSnackBar('Error: ${e.toString()}');
+      _showSnackBar('Erreur: ${e.toString()}');
     }
   }
 
+  // Exporte le QR Code dans un fichier choisi par l'utilisateur.
   Future<void> _saveQRImage() async {
     try {
       final filePath = await FilePicker.platform.saveFile(
@@ -172,10 +182,11 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
       final pngBytes = byteData?.buffer.asUint8List();
       if (pngBytes == null) return;
 
-      await ImageGallerySaver.saveImage(pngBytes, name: filePath);
-      _showSnackBar('QR Code saved successfully');
+      final file = File(filePath);
+      await file.writeAsBytes(pngBytes);
+      _showSnackBar('QR Code exporté en tant que fichier');
     } catch (e) {
-      _showSnackBar('Error: ${e.toString()}');
+      _showSnackBar('Erreur: ${e.toString()}');
     }
   }
 

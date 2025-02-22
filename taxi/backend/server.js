@@ -11,11 +11,12 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 const morgan = require("morgan");
+const multer = require("multer"); // <-- Ajout de l'import de multer
+const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
-const fs = require("fs");
 
 // 📌 Vérifier et créer le dossier `uploads/` s'il n'existe pas
 const uploadDir = "uploads/";
@@ -23,7 +24,6 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
     console.log("📂 Dossier `uploads/` créé !");
 }
-
 
 // ✅ Exporter `io` immédiatement pour éviter les erreurs de dépendance circulaire
 module.exports = { app, server, io };
@@ -33,7 +33,8 @@ setupSwagger(app);
 swaggerDocs(app);
 
 // ✅ Middleware Globaux
-app.use(cors());
+// Configuration CORS pour autoriser toutes les origines
+app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(helmet());
@@ -157,7 +158,6 @@ app.use((err, req, res, next) => {
     console.error("🔥 Erreur Serveur :", err.stack);
     res.status(500).json({ message: "Erreur interne du serveur." });
 });
-
 
 // ✅ Route de Test
 app.get("/", (req, res) => {
