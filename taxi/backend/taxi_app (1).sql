@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 21, 2025 at 09:07 AM
+-- Generation Time: Feb 21, 2025 at 10:39 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -34,6 +34,15 @@ CREATE TABLE `emergency_contacts` (
   `contact_phone` varchar(20) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `emergency_contacts`
+--
+
+INSERT INTO `emergency_contacts` (`contact_id`, `user_id`, `contact_name`, `contact_phone`, `created_at`) VALUES
+(6, 111, 'Contact 1', '54584', '2025-02-21 15:43:34'),
+(7, 111, 'Contact 2', '54959', '2025-02-21 15:43:35'),
+(8, 111, 'Contact 3', '549865', '2025-02-21 15:43:36');
 
 -- --------------------------------------------------------
 
@@ -116,6 +125,13 @@ CREATE TABLE `qr_codes` (
   `qr_data` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `qr_codes`
+--
+
+INSERT INTO `qr_codes` (`qr_id`, `user_id`, `qr_data`, `created_at`) VALUES
+(1, 112, 'QR480193', '2025-02-21 19:15:22');
 
 -- --------------------------------------------------------
 
@@ -386,7 +402,7 @@ ALTER TABLE `verifications`
 -- AUTO_INCREMENT for table `emergency_contacts`
 --
 ALTER TABLE `emergency_contacts`
-  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `history`
@@ -416,7 +432,7 @@ ALTER TABLE `payments`
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `qr_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `qr_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `reviews`
